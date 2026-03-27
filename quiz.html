@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CyberSec Adaptive Quiz</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --bg:#0f1314; --green:#2dde2d; --red:#ff3355; --yellow:#f5c518; --cyan:#00d4e8; --dim:#426042; --fg:var(--green);
+    }
+    /* Light theme overrides when body has .light */
+    body.light{ --bg:#e9eceb; --green:#267a2a; --red:#b3243a; --yellow:#8f720f; --cyan:#0a8ea0; --dim:#6b7b6b; --fg:#07090a; }
+    body.light .neon{ text-shadow:none; }
+    body.light .crt:after{ mix-blend-mode:normal; opacity:0.12; }
+    html,body{height:100%;}
+    body{
+      background:var(--bg);
+      color:var(--fg);
+      font-family: "Courier New", Courier, monospace;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+    /* Neon glow */
+    .neon{ text-shadow:0 0 6px rgba(45,222,45,0.25),0 0 12px rgba(45,222,45,0.07); }
+    /* CRT scanlines overlay */
+    .crt:after{
+      content:""; pointer-events:none; position:fixed; inset:0;
+      background-image:repeating-linear-gradient(rgba(0,0,0,0.12) 0 1px, rgba(0,0,0,0) 1px 3px);
+      mix-blend-mode:overlay; opacity:0.6;
+    }
+    .glass{ background:rgba(0,0,0,0.4); border:1px solid rgba(45,222,45,0.06); box-shadow:0 0 20px rgba(45,222,45,0.02) inset; }
+    /* Light theme card/bg tweaks */
+    body.light .glass{ background:rgba(250,250,250,0.92); border:1px solid rgba(7,9,10,0.06); box-shadow:none; color:var(--fg); }
+    .btn{ padding:.6rem 1rem; border-radius:.35rem; border:1px solid rgba(45,222,45,0.12); background:rgba(0,0,0,0.28); color:var(--fg); }
+    body.light .btn{ background:rgba(255,255,255,0.9); border:1px solid rgba(7,9,10,0.06); color:var(--fg); }
+    .glow{ box-shadow:0 0 14px rgba(45,222,45,0.14); }
+    .muted{ color:var(--dim); }
+    body.light .muted{ color:var(--dim); }
+    .difficulty{ letter-spacing:.06em; }
+    .diamond{ font-size:1.05rem; margin-right:2px; }
+    .cursor{ display:inline-block; width:.7ch; background:var(--green); margin-left:6px; animation:blink 1s steps(2,start) infinite; }
+    @keyframes blink{ 50%{ opacity:0 } }
+    .progress-outer{ background:rgba(255,255,255,0.03); height:12px; border-radius:8px; }
+    .progress-inner{ height:12px; background:linear-gradient(90deg,var(--green),#87ff87); border-radius:8px; }
+    /* buttons */
+    .btn-correct{ background:rgba(45,222,45,0.06); border-color:rgba(45,222,45,0.18); }
+    .btn-wrong{ background:rgba(255,51,85,0.04); border-color:rgba(255,51,85,0.18); }
+    /* Disabled option visual */
+    .btn[disabled]{ opacity:0.9; filter:grayscale(0.02); }
+    /* Light-theme overrides: stronger colored backgrounds for correctness */
+    body.light .btn-correct{ background:rgba(45,222,45,0.18); border-color:rgba(45,222,45,0.35); box-shadow:0 0 12px rgba(45,222,45,0.06); }
+    body.light .btn-wrong{ background:rgba(255,51,85,0.12); border-color:rgba(255,51,85,0.28); box-shadow:0 0 8px rgba(255,51,85,0.04); }
+    /* Ensure text remains readable when highlighted */
+    body.light .btn-correct, body.light .btn-wrong{ color:var(--fg); }
+    .tag{ background:rgba(0,0,0,0.4); color:var(--cyan); padding:.18rem .5rem; border-radius:.25rem; border:1px solid rgba(0,212,232,0.08); }
+    body.light .tag{ background:rgba(230,245,247,0.7); color:var(--cyan); border:1px solid rgba(10,142,160,0.08); }
+    /* small screens */
+    @media(max-width:640px){ .container{ padding:1rem } }
+  </style>
+</head>
+<body class="crt min-h-screen flex items-center justify-center p-8">
+  <div id="app" class="container max-w-3xl w-full">
+    <!-- Boot Screen -->
+    <section id="boot" class="boot-screen glass p-8 rounded-lg">
+      <div class="neon text-lg">PhosphorOS v1.0</div>
+      <div id="boot-lines" class="mt-4 text-sm muted" style="min-height:120px;">
+      </div>
+      <div class="mt-4">
+        <div class="progress-outer"><div id="boot-progress" class="progress-inner" style="width:0%"></div></div>
+      </div>
+    </section>
+
+    <!-- Dashboard -->
+    <section id="dashboard" class="hidden glass p-6 rounded-lg">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <div class="text-2xl neon">CyberSec Adaptive Quiz</div>
+          <div class="muted text-sm">Phosphor terminal theme — spaced repetition</div>
+        </div>
+        <div class="text-right">
+          <div class="text-sm muted">Cards Due</div>
+          <div id="due-counter" class="text-xl neon">0</div>
+          <div class="mt-2"><button id="theme-toggle" class="btn muted">Toggle Theme</button></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 glass rounded">
+          <div class="text-sm muted">New</div>
+          <div id="count-new" class="text-xl neon">0</div>
+        </div>
+        <div class="p-4 glass rounded">
+          <div class="text-sm muted">Learning (≤7d)</div>
+          <div id="count-learning" class="text-xl neon">0</div>
+        </div>
+        <div class="p-4 glass rounded">
+          <div class="text-sm muted">Review (≤21d)</div>
+          <div id="count-review" class="text-xl neon">0</div>
+        </div>
+        <div class="p-4 glass rounded">
+          <div class="text-sm muted">Mastered (&gt;21d)</div>
+          <div id="count-mastered" class="text-xl neon">0</div>
+        </div>
+      </div>
+      <div class="mb-4">
+        <div class="text-sm muted mb-2">Topic Accuracy</div>
+        <div id="topic-bars" class="space-y-2"></div>
+      </div>
+      <div class="flex justify-between items-center">
+        <button id="start-session" class="btn glow px-6 py-2 neon">START SESSION</button>
+        <div class="muted text-sm">Local progress stored in browser</div>
+      </div>
+    </section>
+
+    <!-- Quiz Screen -->
+    <section id="quiz" class="hidden glass p-6 rounded-lg">
+      <div class="flex justify-between items-center mb-3">
+        <div class="flex items-center gap-3">
+          <div id="topic-tag" class="tag">Network Security</div>
+          <div id="difficulty-dots" class="difficulty muted">◆◆◇◇◇</div>
+          <div id="streak" class="text-sm neon hidden">🔥 Streak: <span id="streak-val">3</span></div>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="exit-session" class="btn muted">Exit Session</button>
+          <div class="w-48 sm:w-1/3">
+            <div class="text-sm muted">Progress</div>
+            <div class="progress-outer"><div id="session-progress" class="progress-inner" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+      <div id="qbox" class="p-4 rounded border border-green-600/10 mb-4">
+        <div id="question-text" class="text-lg neon"></div>
+      </div>
+      <div id="options" class="grid gap-3 mb-4"></div>
+      <div id="explanation" class="muted text-sm mb-4 hidden glass p-3 rounded"></div>
+      <div id="rating" class="flex gap-3 hidden">
+        <button class="btn btn-correct" data-grade="5">Easy</button>
+        <button class="btn btn-correct" data-grade="4">Good</button>
+        <button class="btn btn-correct" data-grade="3">Hard</button>
+      </div>
+      <div id="gotit" class="hidden">
+        <button id="gotit-btn" class="btn btn-wrong">Got it</button>
+      </div>
+    </section>
+
+    <!-- Session Complete -->
+    <section id="complete" class="hidden glass p-6 rounded-lg text-center">
+      <div class="text-2xl neon mb-2">Session Complete</div>
+      <div class="mb-4">
+        <div class="muted">Accuracy</div>
+        <div id="accuracy" class="text-3xl neon">0%</div>
+      </div>
+      <div class="grid grid-cols-3 gap-4 mb-4">
+        <div class="p-4 glass rounded">
+          <div class="muted">Correct</div>
+          <div id="stat-correct" class="neon">0</div>
+        </div>
+        <div class="p-4 glass rounded">
+          <div class="muted">Incorrect</div>
+          <div id="stat-incorrect" class="neon">0</div>
+        </div>
+        <div class="p-4 glass rounded">
+          <div class="muted">Best Streak</div>
+          <div id="stat-streak" class="neon">0</div>
+        </div>
+      </div>
+      <button id="back-dashboard" class="btn neon">Back to Dashboard</button>
+    </section>
+
+  </div>
+
+<script>
+// Single-file CyberSec Adaptive Quiz
+// Storage key
+const STORAGE_KEY = 'cyber_quiz_state_v1';
+const THEME_KEY = 'cyber_quiz_theme_v1';
+
+// Utility
+const now = ()=>Date.now();
+const dayMs = 86400000;
+
+// Question bank (20 questions: 13 MCQ, 7 TF) — substantive
+const BANK = [
+  {id:'q1',type:'mcq',topic:'Network Security',difficulty:3,question:'Which protocol provides secure remote login and command execution?',options:['Telnet','FTP','SSH','HTTP'],answer:2,explanation:'SSH (Secure Shell) provides encrypted remote login and secure command execution.'},
+  {id:'q2',type:'mcq',topic:'Cryptography',difficulty:4,question:'Which property does a cryptographic hash provide?',options:['Reversibility','Collision resistance','Symmetric key exchange','Authenticity by itself'],answer:1,explanation:'A cryptographic hash should be collision resistant; it is one-way, not reversible.'},
+  {id:'q3',type:'mcq',topic:'Malware',difficulty:3,question:'A piece of software that replicates itself and spreads to other machines is called:',options:['Trojan','Worm','Rootkit','Adware'],answer:1,explanation:'A worm self-replicates and spreads across networks without needing a host program.'},
+  {id:'q4',type:'mcq',topic:'Social Engineering',difficulty:2,question:'Which technique best describes phishing?',options:['Exploiting a buffer overflow','Sending deceptive emails to obtain credentials','Scanning open ports','Encrypting files for ransom'],answer:1,explanation:'Phishing uses deceptive communication (often email) to trick users into revealing credentials.'},
+  {id:'q5',type:'mcq',topic:'Web Security',difficulty:4,question:'Which defense mitigates SQL injection attacks?',options:['Input validation and prepared statements','Using SMTP for communication','Disabling TLS','Running on localhost only'],answer:0,explanation:'Using parameterized queries/prepared statements and proper input validation prevents SQL injection.'},
+  {id:'q6',type:'mcq',topic:'Incident Response',difficulty:5,question:'What is the primary first action in incident response when a breach is detected?',options:['Notify customers immediately','Contain the incident to prevent further damage','Rebuild all servers','Publish a press release'],answer:1,explanation:'Containment is typically the immediate priority to limit impact before wider actions.'},
+  {id:'q7',type:'mcq',topic:'Authentication',difficulty:3,question:'Which factor is NOT part of multi-factor authentication?',options:['Something you know','Something you have','Something you are','Something you like'],answer:3,explanation:'"Something you like" is not a recognized authentication factor.'},
+  {id:'q8',type:'mcq',topic:'Network Security',difficulty:4,question:'Which device isolates and segments networks to limit access between subnets?',options:['Switch','Router','Firewall','Hub'],answer:2,explanation:'Firewalls enforce policies and can segment traffic between network zones.'},
+  {id:'q9',type:'mcq',topic:'Cryptography',difficulty:5,question:'Which algorithm is appropriate for asymmetric encryption?',options:['AES','RSA','SHA-256','Blowfish'],answer:1,explanation:'RSA is a widely used asymmetric cryptosystem; AES is symmetric.'},
+  {id:'q10',type:'mcq',topic:'Malware',difficulty:4,question:'What distinguishes a Trojan from a worm?',options:['Trojans self-replicate','Trojans hide within legitimate programs and don’t self-replicate','Trojans are hardware devices','Trojans only affect MacOS'],answer:1,explanation:'Trojans hide in legitimate software and typically do not self-replicate.'},
+  {id:'q11',type:'mcq',topic:'Web Security',difficulty:3,question:'What is the purpose of Content Security Policy (CSP)?',options:['Encrypt network traffic','Control which resources can be loaded/executed on a page','Store passwords securely','Scan for vulnerabilities'],answer:1,explanation:'CSP helps mitigate XSS by restricting sources of scripts and other resources.'},
+  {id:'q12',type:'mcq',topic:'Incident Response',difficulty:2,question:'Which log source is most useful for tracking user authentication events?',options:['Web server logs','Authentication server/AD logs','DNS logs','Printer logs'],answer:1,explanation:'Authentication servers and Active Directory logs typically capture login events.'},
+  {id:'q13',type:'mcq',topic:'Authentication',difficulty:5,question:'What is the risk of reusing salts across multiple passwords?',options:['No risk','It can allow attackers to detect identical passwords across users','It speeds up hashing','It prevents rainbow table attacks'],answer:1,explanation:'Reusing salts defeats the purpose of salting, making it easier to spot identical password hashes.'},
+  {id:'q14',type:'tf',topic:'Social Engineering',difficulty:2,question:'Two-factor authentication always prevents account takeover.','options':['True','False'],answer:false,explanation:'2FA reduces risk but can be bypassed via SIM swapping, phishing of OTPs, or stolen tokens.'},
+  {id:'q15',type:'tf',topic:'Network Security',difficulty:3,question:'A VPN encrypts traffic between endpoints over untrusted networks.','options':['True','False'],answer:true,explanation:'A VPN creates an encrypted tunnel to protect data in transit over untrusted networks.'},
+  {id:'q16',type:'tf',topic:'Web Security',difficulty:4,question:'Disabling cookies eliminates all web tracking.','options':['True','False'],answer:false,explanation:'Cookies are one tracking vector but fingerprinting and other methods still track users.'},
+  {id:'q17',type:'tf',topic:'Cryptography',difficulty:5,question:'SHA-256 is suitable for password hashing without additional protections.','options':['True','False'],answer:false,explanation:'SHA-256 is fast and not ideal alone; use slow KDFs (bcrypt/scrypt/Argon2) with salts.'},
+  {id:'q18',type:'tf',topic:'Malware',difficulty:3,question:'Ransomware typically exfiltrates data before encryption to increase pressure.','options':['True','False'],answer:true,explanation:'Many modern ransomware strains exfiltrate data to enable double extortion.'},
+  {id:'q19',type:'tf',topic:'Incident Response',difficulty:2,question:'Having an incident response plan reduces recovery time and business impact.','options':['True','False'],answer:true,explanation:'Prepared plans speed response and reduce business disruption.'},
+  {id:'q20',type:'tf',topic:'Authentication',difficulty:4,question:'Password complexity alone ensures strong authentication.','options':['True','False'],answer:false,explanation:'Complex passwords help but should be combined with other measures (2FA, rate-limiting, monitoring).'}
+];
+
+// Default scheduling fields
+function defaultState(){ return {interval:0, easeFactor:2.5, repetitions:0, nextDue:0, history:[]}; }
+
+// Load/merge state
+function loadState(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  let saved = raw?JSON.parse(raw):{};
+  const cards = BANK.map(c=>{
+    const s = saved[c.id] || defaultState();
+    return Object.assign({}, c, {interval:s.interval, easeFactor:s.easeFactor, repetitions:s.repetitions, nextDue:s.nextDue||0, history:s.history||[]});
+  });
+  return {cards, saved};
+}
+
+function saveCard(card){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  let saved = raw?JSON.parse(raw):{};
+  saved[card.id] = {interval:card.interval, easeFactor:card.easeFactor, repetitions:card.repetitions, nextDue:card.nextDue, history:card.history};
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+}
+
+// App state
+const App = { all:[], sessionQueue:[], sessionIndex:0, stats:{correct:0,incorrect:0,streak:0,bestStreak:0}, sessionSize:0 };
+
+// UI refs
+const $ = id=>document.getElementById(id);
+
+// Boot animation
+async function bootSequence(){
+  const lines = [
+    'Initializing PhosphorOS...','Loading kernel modules: [ok]','Mounting secure storage...','Checking crypto providers...','Network interfaces up: eth0 wlan0','Calibrating terminal phosphor levels','Starting adaptive scheduler'
+  ];
+  const el = $('boot-lines');
+  for(let i=0;i<lines.length;i++){
+    await typeLine(el, lines[i]);
+    const p = Math.round(((i+1)/lines.length)*100);
+    $('boot-progress').style.width = p + '%';
+    await sleep(350);
+  }
+  await sleep(500);
+  showSection('dashboard');
+}
+function typeLine(el,text){
+  return new Promise(res=>{
+    const row = document.createElement('div'); row.className='text-sm';
+    el.appendChild(row);
+    let i=0; const iv=setInterval(()=>{ row.textContent = text.slice(0,i+1) + (i%2? '':' '); i++; if(i>text.length){ clearInterval(iv); res(); } },28);
+  });
+}
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+// Sections
+function showSection(name){
+  ['boot','dashboard','quiz','complete'].forEach(s=>$(s).classList.add('hidden'));
+  $(name).classList.remove('hidden');
+}
+
+// Dashboard render
+function renderDashboard(){
+  const nowTs = now();
+  const newCount = App.all.filter(c=>c.repetitions===0).length;
+  const learning = App.all.filter(c=>c.interval>0 && c.interval<=7).length;
+  const review = App.all.filter(c=>c.interval>7 && c.interval<=21).length;
+  const mastered = App.all.filter(c=>c.interval>21).length;
+  const due = App.all.filter(c=> (c.nextDue||0) <= nowTs).length;
+  $('count-new').textContent = newCount;
+  $('count-learning').textContent = learning;
+  $('count-review').textContent = review;
+  $('count-mastered').textContent = mastered;
+  $('due-counter').textContent = due;
+  // topic accuracy bars: compute percent correct from history
+  const topics = {};
+  App.all.forEach(c=>{ topics[c.topic]=topics[c.topic]||{correct:0,total:0}; c.history.forEach(h=>{ topics[c.topic].total++; if(h.correct) topics[c.topic].correct++; }) });
+  const container = $('topic-bars'); container.innerHTML='';
+  Object.keys(topics).forEach(t=>{
+    const data = topics[t];
+    const pct = data.total?Math.round((data.correct/data.total)*100):0;
+    const row = document.createElement('div'); row.className='flex items-center gap-3';
+    row.innerHTML = `<div class="w-32 muted text-sm">${t}</div><div class="flex-1"><div class="progress-outer"><div class="progress-inner" style="width:${pct}%"></div></div></div><div class="w-12 text-right muted text-sm">${pct}%</div>`;
+    container.appendChild(row);
+  });
+}
+
+// Prepare session queue
+function prepareSession(){
+  const nowTs = now();
+  let due = App.all.filter(c=> (c.nextDue||0) <= nowTs);
+  // New cards before review cards; within each, sort by easeFactor ascending (weaker first)
+  const isNew = c=>c.repetitions===0;
+  due.sort((a,b)=>{ if(isNew(a)!==isNew(b)) return isNew(a)?-1:1; if(a.easeFactor!==b.easeFactor) return a.easeFactor - b.easeFactor; return a.difficulty - b.difficulty; });
+  App.sessionQueue = due.slice(0,15);
+  App.sessionIndex = 0;
+  App.sessionSize = App.sessionQueue.length;
+  App.stats = {correct:0,incorrect:0,streak:0,bestStreak:0};
+}
+
+// Render current card
+function renderCard(){
+  const idx = App.sessionIndex;
+  if(idx>=App.sessionSize){ finishSession(); return; }
+  const card = App.sessionQueue[idx];
+  $('topic-tag').textContent = card.topic;
+  $('difficulty-dots').innerHTML = difficultyDots(card.difficulty);
+  $('question-text').textContent = card.question;
+  const opts = $('options'); opts.innerHTML='';
+  $('explanation').classList.add('hidden'); $('rating').classList.add('hidden'); $('gotit').classList.add('hidden');
+  if(card.type==='mcq'){
+    card.options.forEach((o,i)=>{
+      const b = document.createElement('button'); b.className='btn w-full text-left neon'; b.dataset.index = i; b.innerHTML = `<span class="muted mr-3">${String.fromCharCode(65+i)}</span> ${o}`;
+      b.onclick = ()=>selectOption(card,i,b);
+      opts.appendChild(b);
+    });
+  } else {
+    ['True','False'].forEach((t,i)=>{
+      const b = document.createElement('button'); b.className='btn w-full text-left neon'; b.dataset.index = i; b.innerHTML = t;
+      b.onclick = ()=>selectOption(card,i,b);
+      opts.appendChild(b);
+    });
+  }
+  updateProgress();
+  // streak display
+  if(App.stats.streak>2){ $('streak').classList.remove('hidden'); $('streak-val').textContent = App.stats.streak; } else { $('streak').classList.add('hidden'); }
+}
+
+function difficultyDots(n){
+  let s=''; for(let i=1;i<=5;i++) s += (i<=n)?'◆':'◇'; return s;
+}
+
+function updateProgress(){
+  const answered = (typeof arguments[0] === 'number') ? arguments[0] : App.sessionIndex;
+  const pct = App.sessionSize?Math.round((answered/App.sessionSize)*100):100;
+  $('session-progress').style.width = pct + '%';
+}
+
+// On selecting an option
+function selectOption(card,choice,buttonEl){
+  const correct = (card.type==='mcq') ? (choice===card.answer) : ((choice===0)===card.answer);
+  // disable all options
+  Array.from($('options').children).forEach(b=>b.disabled=true);
+  // update progress to reflect this question as answered (visual immediately)
+  updateProgress(App.sessionIndex+1);
+  if(correct){
+    buttonEl.classList.add('btn-correct');
+    showExplanation(card, true);
+    // show rating buttons
+    $('rating').classList.remove('hidden');
+    Array.from($('rating').children).forEach(b=>b.onclick = ()=>applyGrade(card, parseInt(b.dataset.grade)) );
+    // update stats
+    App.stats.correct++; App.stats.streak++; if(App.stats.streak>App.stats.bestStreak) App.stats.bestStreak = App.stats.streak;
+  } else {
+    buttonEl.classList.add('btn-wrong');
+    // highlight correct
+    Array.from($('options').children).forEach((b,i)=>{ const isCorr = (card.type==='mcq') ? (i===card.answer) : ((i===0)===card.answer); if(isCorr) b.classList.add('btn-correct'); });
+    showExplanation(card, false);
+    // show got it
+    $('gotit').classList.remove('hidden');
+    $('gotit-btn').onclick = ()=>{ applyFail(card); };
+    App.stats.incorrect++; App.stats.streak = 0;
+  }
+}
+
+function showExplanation(card,wasCorrect){
+  const ex = $('explanation'); ex.innerHTML = `<div class="muted">Explanation:</div><div class="mt-1">${card.explanation}</div>`; ex.classList.remove('hidden');
+}
+
+function applyGrade(card,grade){
+  // grade 5=Easy,4=Good,3=Hard
+  const nowTs = now();
+  if(grade>=3){
+    // pass
+    let rep = card.repetitions || 0;
+    let interval = card.interval || 0;
+    let ef = card.easeFactor || 2.5;
+    let newInterval;
+    if(rep===0) newInterval = 1;
+    else if(rep===1) newInterval = 6;
+    else newInterval = Math.round(interval * ef) || 1;
+    const newEF = Math.max(1.3, ef + 0.1 - (5-grade)*0.08);
+    card.repetitions = rep + 1;
+    card.interval = newInterval;
+    card.easeFactor = newEF;
+    card.nextDue = nowTs + newInterval*dayMs;
+    card.history = card.history || []; card.history.push({ts:nowTs,grade:grade,correct:true});
+  } else {
+    // treat as fail
+    card.repetitions = 0; card.interval = 1; card.easeFactor = Math.max(1.3,(card.easeFactor||2.5)-0.2);
+    card.nextDue = nowTs + 60*1000; // 1 minute
+    card.history = card.history || []; card.history.push({ts:nowTs,grade:grade,correct:false});
+  }
+  saveCard(card);
+  // advance to next
+  App.sessionIndex++; renderCard();
+}
+
+function applyFail(card){
+  const nowTs = now();
+  card.repetitions = 0; card.interval = 1; card.easeFactor = Math.max(1.3,(card.easeFactor||2.5)-0.2);
+  card.nextDue = nowTs + 60*1000; card.history = card.history || []; card.history.push({ts:nowTs,grade:2,correct:false});
+  saveCard(card);
+  App.sessionIndex++; renderCard();
+}
+
+function finishSession(){
+  // show complete
+  const total = App.sessionSize || 1;
+  const correct = App.stats.correct; const incorrect = App.stats.incorrect;
+  const pct = Math.round((correct/(correct+incorrect||1))*100);
+  $('accuracy').textContent = pct + '%';
+  $('stat-correct').textContent = correct; $('stat-incorrect').textContent = incorrect; $('stat-streak').textContent = App.stats.bestStreak;
+  showSection('complete');
+}
+
+// Event wiring
+$('start-session').onclick = ()=>{ prepareSession(); if(App.sessionSize===0){ alert('No cards due now. Come back later.'); return; } showSection('quiz'); renderCard(); };
+$('back-dashboard').onclick = ()=>{ renderDashboard(); showSection('dashboard'); };
+  // Exit session mid-quiz (if user wants to abort and return to dashboard)
+  const exitBtn = $('exit-session');
+  if(exitBtn){
+    exitBtn.onclick = ()=>{
+      if(confirm('Exit session and return to dashboard? You can continue later.')){
+        renderDashboard(); showSection('dashboard');
+      }
+    };
+  }
+
+// Initialization
+function init(){
+  const data = loadState(); App.all = data.cards;
+  // Ensure all cards have nextDue set (new cards become due now)
+  const nowTs = now();
+  App.all.forEach(c=>{ if(!c.nextDue) c.nextDue = nowTs; if(!c.history) c.history=[]; });
+  renderDashboard();
+  // Apply saved theme (default: dark)
+  try{
+    const savedTheme = localStorage.getItem(THEME_KEY) || 'dark';
+    if(savedTheme === 'light') document.body.classList.add('light'); else document.body.classList.remove('light');
+    updateThemeToggleLabel();
+  }catch(e){/*ignore*/}
+  // Boot sequence then show dashboard
+  setTimeout(()=>bootSequence(),300);
+}
+
+function updateThemeToggleLabel(){
+  const btn = $('theme-toggle'); if(!btn) return;
+  const isLight = document.body.classList.contains('light');
+  btn.textContent = isLight ? 'Light Theme' : 'Dark Theme';
+}
+
+// Theme toggle wiring
+document.addEventListener('click', (e)=>{
+  if(e.target && e.target.id==='theme-toggle'){
+    const isLight = document.body.classList.toggle('light');
+    try{ localStorage.setItem(THEME_KEY, isLight? 'light':'dark'); }catch(err){}
+    updateThemeToggleLabel();
+  }
+});
+
+// Start
+init();
+</script>
+</body>
+</html>
