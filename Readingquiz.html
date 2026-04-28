@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phishing — Interactive Study Deck</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent: #c0392b;
+  --bg: #faf8f4;
+  --bg2: #f2ede4;
+  --ink: #1a1a1a;
+  --ink2: #3d3d3d;
+  --ink3: #6b6b6b;
+  --rule: #d8d3ca;
+  --white: #ffffff;
+  --correct: #2d7a3a;
+  --wrong: #b82b1f;
+  --r: 10px;
+  --t: 0.2s ease;
+  --shadow: 0 2px 16px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:'Source Serif 4',Georgia,serif;
+  min-height:100vh;-webkit-font-smoothing:antialiased;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{transform:scale(0.95)}60%{transform:scale(1.02)}100%{transform:scale(1)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.fade-in{animation:fadeUp 0.32s ease both}
+
+/* TOPBAR */
+.topbar{
+  background:var(--ink);padding:11px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:20;gap:10px;
+}
+.topbar-brand{
+  font-family:'Playfair Display',serif;
+  font-size:0.85rem;font-weight:700;color:#fff;
+  white-space:nowrap;flex-shrink:0;
+}
+.step-track{display:flex;gap:4px;align-items:center;flex:1;min-width:0;padding:0 8px}
+.step-pip{height:3px;border-radius:2px;background:#2e2e2e;flex:1;min-width:10px;transition:background 0.4s ease}
+.step-pip.done{background:var(--accent)}
+.step-pip.active{background:var(--accent);opacity:0.5}
+.exit-btn{
+  display:flex;align-items:center;gap:5px;
+  background:transparent;border:1px solid #333;
+  color:#888;padding:6px 11px;border-radius:6px;
+  font-size:0.72rem;font-weight:600;letter-spacing:0.06em;
+  text-transform:uppercase;cursor:pointer;
+  transition:all 0.2s;white-space:nowrap;flex-shrink:0;
+  font-family:'Source Serif 4',serif;
+}
+.exit-btn:hover{border-color:#666;color:#ccc}
+
+/* MODAL OVERLAY */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.65);
+  z-index:100;display:flex;align-items:center;justify-content:center;
+  animation:fadeIn 0.18s ease;padding:20px;
+}
+.modal-box{
+  background:var(--white);border-radius:14px;
+  padding:32px 26px;max-width:360px;width:100%;
+  text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.25);
+  animation:pop 0.25s ease;
+}
+.modal-icon{font-size:2.4rem;margin-bottom:12px}
+.modal-h{
+  font-family:'Playfair Display',serif;
+  font-size:1.2rem;font-weight:700;margin-bottom:8px;
+}
+.modal-p{font-size:0.87rem;color:var(--ink3);line-height:1.62;margin-bottom:22px}
+.modal-btns{display:flex;gap:10px}
+.modal-btns .btn{flex:1}
+
+/* CONTENT */
+.content{max-width:600px;margin:0 auto;padding:36px 20px 80px}
+.kicker{font-size:0.63rem;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--accent);margin-bottom:9px;display:block}
+.display{font-family:'Playfair Display',serif;font-size:clamp(1.85rem,4vw,2.7rem);font-weight:700;line-height:1.14;letter-spacing:-0.015em;margin-bottom:14px}
+.section-h{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;line-height:1.2;margin-bottom:10px}
+.lead{font-size:1rem;line-height:1.72;color:var(--ink2);margin-bottom:18px}
+.body-t{font-size:0.91rem;line-height:1.7;color:var(--ink2);margin-bottom:10px}
+
+/* BUTTONS */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  gap:8px;padding:13px 22px;border:none;border-radius:var(--r);
+  font-family:'Source Serif 4',serif;font-size:0.9rem;
+  font-weight:600;cursor:pointer;transition:all var(--t);line-height:1;
+}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-o{background:transparent;border:2px solid var(--rule);color:var(--ink2)}
+.btn-o:hover{border-color:var(--ink2);color:var(--ink)}
+.btn-ghost{background:transparent;border:2px solid #eee;color:var(--ink3)}
+.btn-ghost:hover{border-color:var(--rule);color:var(--ink2)}
+.btn-g{background:transparent;color:var(--ink3);padding:10px 14px}
+.btn-g:hover{color:var(--ink)}
+.btn-g:disabled{opacity:0.25;cursor:not-allowed}
+.btn-full{width:100%}
+.btn-danger{background:#fdecea;color:var(--wrong);border:2px solid #fca49e}
+.btn-danger:hover{background:#fbd4d0}
+
+/* START SCREEN */
+.start-bg{background:var(--ink);min-height:100vh;display:flex;flex-direction:column}
+.start-hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px 28px 48px}
+.s-kicker{font-size:0.66rem;letter-spacing:0.22em;text-transform:uppercase;font-weight:600;color:#555;margin-bottom:18px}
+.s-title{font-family:'Playfair Display',serif;font-size:clamp(2.4rem,6vw,4rem);font-weight:700;color:#fff;line-height:1.08;margin-bottom:18px;letter-spacing:-0.02em}
+.s-sub{font-size:1rem;color:#888;max-width:420px;line-height:1.65;margin-bottom:32px}
+.s-tags{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:34px}
+.s-tag{font-size:0.67rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:5px 13px;border-radius:20px;border:1px solid #2a2a2a;color:#666}
+.s-stats{display:flex;gap:40px;justify-content:center;padding:22px 0;border-top:1px solid #1e1e1e;border-bottom:1px solid #1e1e1e;margin-bottom:34px}
+.stat-n{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:#fff;line-height:1;display:block}
+.stat-l{font-size:0.67rem;letter-spacing:0.12em;text-transform:uppercase;color:#444;margin-top:4px;display:block}
+
+/* MODULE INTRO */
+.mod-card{display:flex;align-items:center;gap:16px;padding:18px;background:var(--bg2);border-radius:var(--r);margin-bottom:24px;border:1px solid var(--rule)}
+.mod-circle{width:50px;height:50px;border-radius:50%;background:var(--accent);color:#fff;font-family:'Playfair Display',serif;font-size:1.45rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mod-info h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700}
+.mod-info p{font-size:0.78rem;color:var(--ink3);margin-top:3px}
+.outline{list-style:none;padding:0;margin:6px 0 26px}
+.outline li{padding:9px 0 9px 20px;border-bottom:1px solid var(--rule);font-size:0.89rem;color:var(--ink2);position:relative;line-height:1.45}
+.outline li:last-child{border-bottom:none}
+.outline li::before{content:'→';position:absolute;left:0;color:var(--accent);font-size:0.8rem;top:10px}
+
+/* FLASHCARD */
+.card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-lbl{font-size:0.64rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent)}
+.card-ctr{font-size:0.74rem;color:var(--ink3)}
+.card-pips{display:flex;gap:5px;margin-bottom:16px;flex-wrap:wrap}
+.card-pip{height:4px;border-radius:2px;background:var(--rule);transition:background 0.3s;flex:1;min-width:12px}
+.card-pip.done{background:var(--accent);opacity:0.4}
+.card-pip.active{background:var(--accent)}
+
+/* 3D FLIP */
+.fc-scene{perspective:1000px;cursor:pointer;margin-bottom:12px;user-select:none}
+.fc{position:relative;width:100%;min-height:340px;transform-style:preserve-3d;transition:transform 0.52s cubic-bezier(0.4,0,0.2,1)}
+.fc.flipped{transform:rotateY(180deg)}
+.fc-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:var(--r);display:flex;flex-direction:column;min-height:340px}
+.fc-front{background:var(--ink);color:#fff;overflow:hidden;box-shadow:var(--shadow)}
+.fc-img{width:100%;height:150px;object-fit:cover;display:block;flex-shrink:0}
+.fc-img-placeholder{width:100%;height:150px;display:flex;align-items:center;justify-content:center;font-size:4rem;flex-shrink:0}
+.fc-front-body{padding:22px 24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;flex:1}
+.fc-term{font-family:'Playfair Display',serif;font-size:1.38rem;font-weight:700;color:#fff;line-height:1.2;margin-bottom:6px}
+.fc-hint{font-size:0.68rem;color:#444;margin-top:10px;letter-spacing:0.07em;text-transform:uppercase}
+.fc-back{background:var(--white);border:1.5px solid var(--rule);transform:rotateY(180deg);box-shadow:var(--shadow);overflow-y:auto}
+.fc-back-inner{padding:22px 22px 18px}
+.fc-blbl{font-size:0.62rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:11px}
+.fc-bhead{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;margin-bottom:12px;color:var(--ink)}
+.fc-points{list-style:none;padding:0;display:flex;flex-direction:column;gap:8px}
+.fc-points li{
+  display:flex;gap:9px;align-items:flex-start;
+  font-size:0.87rem;line-height:1.6;color:var(--ink2);
+  padding:8px 11px;background:var(--bg);border-radius:7px;
+}
+.fc-points li .pt-icon{font-size:1rem;flex-shrink:0;margin-top:1px}
+.flip-hint{text-align:center;font-size:0.72rem;color:var(--ink3);margin:8px 0 16px;letter-spacing:0.04em}
+.card-nav{display:flex;gap:9px}
+.card-nav .btn{flex:1}
+
+/* QUIZ */
+.qgate{background:var(--bg2);border:1px solid var(--rule);border-radius:var(--r);padding:30px 22px;text-align:center;margin:16px 0 26px}
+.qgate-icon{font-size:2.6rem;margin-bottom:12px}
+.qgate-title{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;margin-bottom:7px}
+.qgate-sub{font-size:0.87rem;color:var(--ink3);line-height:1.6}
+.q-prog{font-size:0.67rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.q-text{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;line-height:1.38;color:var(--ink);margin-bottom:22px}
+.opts{display:flex;flex-direction:column;gap:9px;margin-bottom:14px}
+.opt{padding:13px 16px;border:2px solid var(--rule);border-radius:var(--r);cursor:pointer;font-size:0.9rem;line-height:1.5;color:var(--ink2);background:var(--white);transition:all var(--t);text-align:left;font-family:'Source Serif 4',serif;display:flex;align-items:flex-start;gap:11px}
+.opt:not([disabled]):hover{border-color:var(--accent);color:var(--ink)}
+.opt.correct{border-color:var(--correct);background:#ebf5ec;color:#1a4e24}
+.opt.wrong{border-color:var(--wrong);background:#fdecea;color:#7a1a14}
+.opt[disabled]{cursor:default}
+.opt-l{width:21px;height:21px;border-radius:50%;border:1.5px solid var(--rule);display:flex;align-items:center;justify-content:center;font-size:0.68rem;font-weight:700;flex-shrink:0;margin-top:2px;transition:all var(--t)}
+.opt.correct .opt-l{border-color:var(--correct);background:var(--correct);color:#fff}
+.opt.wrong .opt-l{border-color:var(--wrong);background:var(--wrong);color:#fff}
+.feedback{padding:13px 17px;border-radius:var(--r);font-size:0.87rem;line-height:1.62;margin-bottom:14px;animation:fadeUp 0.22s ease}
+.fb-ok{background:#ebf5ec;border-left:4px solid var(--correct);color:#1a4e24}
+.fb-no{background:#fdecea;border-left:4px solid var(--wrong);color:#7a1a14}
+
+/* MODULE DONE */
+.done-card{background:var(--white);border:1px solid var(--rule);border-radius:var(--r);padding:34px 26px;text-align:center;margin:22px 0;box-shadow:var(--shadow)}
+.score-ring{width:82px;height:82px;border-radius:50%;background:var(--accent);color:#fff;margin:0 auto 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Playfair Display',serif;animation:pop 0.4s ease}
+.ring-n{font-size:1.8rem;font-weight:700;line-height:1}
+.ring-d{font-size:0.68rem;opacity:0.75}
+.done-h{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;margin-bottom:7px}
+.done-s{font-size:0.87rem;color:var(--ink3);line-height:1.6}
+
+/* RESULTS */
+.res-hero{background:var(--ink);text-align:center;padding:44px 22px 36px}
+.res-kicker{font-size:0.63rem;letter-spacing:0.2em;text-transform:uppercase;color:#444;margin-bottom:12px}
+.res-grade{font-family:'Playfair Display',serif;font-size:5rem;font-weight:700;color:#fff;line-height:1}
+.res-sub{font-size:0.76rem;color:#555;letter-spacing:0.12em;text-transform:uppercase;margin-top:6px}
+.res-msg{font-size:0.97rem;color:#888;margin-top:13px;max-width:360px;margin-left:auto;margin-right:auto;line-height:1.62}
+.bd{list-style:none;padding:0;margin:16px 0 26px}
+.bd li{padding:12px 0;border-bottom:1px solid var(--rule);display:flex;justify-content:space-between;align-items:center;font-size:0.89rem;color:var(--ink2)}
+.bd li:last-child{border-bottom:none}
+.bd-lbl{display:flex;align-items:center;gap:10px}
+.bd-dot{width:9px;height:9px;border-radius:50%}
+.bd-sc{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--ink)}
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase}
+.tag-pass{background:#ebf5ec;color:#2d7a3a}
+.tag-fail{background:#fdecea;color:#b82b1f}
+.tag-ok{background:#e3f2fd;color:#1565c0}
+hr.div{border:none;border-top:1px solid var(--rule);margin:22px 0}
+
+@media(max-width:480px){
+  .content{padding:24px 14px 60px}
+  .fc-term{font-size:1.18rem}
+  .q-text{font-size:1.04rem}
+  .s-stats{gap:24px}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal-root"></div>
+<script>
+// ─────────────────────────────────────────
+//  DATA — flashcard images via Unsplash
+// ─────────────────────────────────────────
+const IMAGES = {
+  phishing:    "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=600&q=80",
+  psychology:  "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=600&q=80",
+  channels:    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80",
+  email:       "https://images.unsplash.com/photo-1596526131083-e8c633c948d2?w=600&q=80",
+  sms:         "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&q=80",
+  phone:       "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&q=80",
+  spear:       "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=600&q=80",
+  exec:        "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=600&q=80",
+  clone:       "https://images.unsplash.com/photo-1555421689-3f034debb7a6?w=600&q=80",
+  dns:         "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&q=80",
+  social:      "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=600&q=80",
+  search:      "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600&q=80",
+  cloud:       "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=600&q=80",
+  bec:         "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&q=80",
+  redflags:    "https://images.unsplash.com/photo-1504808417-22497e7e6bc7?w=600&q=80",
+  sender:      "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&q=80",
+  url:         "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=600&q=80",
+  tactics:     "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&q=80",
+  attach:      "https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&q=80",
+  ceofraud:    "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&q=80",
+  response:    "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=600&q=80",
+};
+
+const BG_COLORS = {
+  phishing: "#1a1a2e", psychology: "#16213e", channels: "#0f3460",
+  email: "#1b2838", sms: "#1e3a5f", phone: "#1a2f4a",
+  spear: "#2c1810", exec: "#1a1a2e", clone: "#162032",
+  dns: "#0d2137", social: "#1a1028", search: "#1c1c2e",
+  cloud: "#0a1628", bec: "#1e2d1e",
+  redflags: "#2d1515", sender: "#1a1a1a", url: "#0d1b2a",
+  tactics: "#1a1a2e", attach: "#1c1c1c", ceofraud: "#1e2d1e",
+  response: "#1a2a1a"
+};
+
+const DATA = {
+  modules:[
+    {
+      id:1, title:"Phishing Fundamentals",
+      subtitle:"What it is, why it works, and how it reaches you",
+      color:"#c0392b",
+      outline:[
+        "Definition and mechanics of phishing",
+        "Why phishing targets humans, not systems",
+        "Phishing occurs across multiple channels — not just email",
+        "Email phishing: the classic, high-volume form",
+        "Smishing: phishing via SMS and text messages",
+        "Vishing: phishing via voice calls"
+      ],
+      flashcards:[
+        {
+          img: IMAGES.phishing, imgBg: BG_COLORS.phishing,
+          icon:"🎣", term:"What is Phishing?",
+          points:[
+            {i:"🎭", t:"An attacker <strong>pretends to be someone you trust</strong> — like your bank, employer, or a tech company."},
+            {i:"🖱️", t:"The goal is to trick you into <strong>clicking a link, entering your password, or downloading something harmful</strong>."},
+            {i:"🧑", t:"It attacks the <strong>person</strong>, not the computer. Your mind is the vulnerability being exploited."},
+            {i:"💡", t:"Example: An email that looks exactly like Netflix asking you to \"update your billing info\" — but it's fake."}
+          ]
+        },
+        {
+          img: IMAGES.psychology, imgBg: BG_COLORS.psychology,
+          icon:"🧠", term:"Why Phishing Targets Humans",
+          points:[
+            {i:"🔧", t:"Software bugs can be fixed with updates. <strong>Human trust cannot be patched.</strong>"},
+            {i:"⚡", t:"Attackers use <strong>urgency, fear, and authority</strong> — emotions that make us act before we think."},
+            {i:"🔐", t:"Even the best firewall is useless if you <strong>willingly hand over your password</strong> on a fake site."},
+            {i:"📊", t:"Over <strong>90% of cyberattacks start with phishing</strong> — it's cheaper and easier than hacking systems directly."}
+          ]
+        },
+        {
+          img: IMAGES.channels, imgBg: BG_COLORS.channels,
+          icon:"📡", term:"Phishing Is Not Just Email",
+          points:[
+            {i:"📱", t:"<strong>SMS (smishing)</strong> — fake text messages with suspicious links."},
+            {i:"📞", t:"<strong>Phone calls (vishing)</strong> — attackers call and impersonate support agents."},
+            {i:"🌐", t:"<strong>Social media</strong> — fake customer service accounts responding to complaints."},
+            {i:"🔍", t:"<strong>Search results</strong> — fake websites that appear at the top of Google searches."},
+            {i:"💡", t:"The <em>channel</em> changes, but the trick is always the same: impersonation + deception."}
+          ]
+        },
+        {
+          img: IMAGES.email, imgBg: BG_COLORS.email,
+          icon:"📧", term:"Email Phishing",
+          points:[
+            {i:"📨", t:"The most common type — millions of identical fake emails are sent to random people."},
+            {i:"🏦", t:"Impersonates banks, shipping companies, government agencies, or IT departments."},
+            {i:"🔗", t:"Includes a link to a <strong>fake login page</strong> that looks real — designed to steal your username and password."},
+            {i:"⚠️", t:"Red flags: generic greetings like \"Dear Customer,\" urgent subject lines, spelling errors."}
+          ]
+        },
+        {
+          img: IMAGES.sms, imgBg: BG_COLORS.sms,
+          icon:"💬", term:"Smishing (SMS Phishing)",
+          points:[
+            {i:"📦", t:"Common message: <em>\"Your package delivery failed. Click here to reschedule.\"</em>"},
+            {i:"🔗", t:"Links are usually <strong>shortened URLs</strong> (like bit.ly) — hiding the true destination."},
+            {i:"😌", t:"People are <strong>less suspicious of texts</strong> than emails — making smishing very effective."},
+            {i:"💡", t:"If you're not expecting a delivery and receive a random text link — <strong>delete it without clicking.</strong>"}
+          ]
+        },
+        {
+          img: IMAGES.phone, imgBg: BG_COLORS.phone,
+          icon:"📞", term:"Vishing (Voice Phishing)",
+          points:[
+            {i:"🖥️", t:"Attacker calls you saying: <em>\"Your computer has a virus. I'm from Microsoft support — let me fix it remotely.\"</em>"},
+            {i:"🏛️", t:"Also impersonates <strong>banks or government agencies</strong> threatening account suspension or legal trouble."},
+            {i:"🚫", t:"<strong>Microsoft, Apple, and banks never call you unsolicited</strong> about your device's security."},
+            {i:"📵", t:"If someone calls you unexpectedly and asks for access or personal info — hang up and call the official number."}
+          ]
+        }
+      ],
+      quiz:[
+        {id:"Q1000",
+         question:"Which option BEST explains what phishing is?",
+         options:[
+           "Malware that spreads automatically through infected USB drives",
+           "An attack that tricks people into harmful actions by impersonating trusted entities",
+           "Hacking into networks through unpatched software vulnerabilities",
+           "Sending mass spam emails to advertise products or services"
+         ],
+         correct:1,
+         explanation:"Phishing is social engineering — it targets human trust, not software. The attacker impersonates a trusted entity to deceive the victim into acting against their own interests."},
+        {id:"Q1007",
+         question:"What is the main goal of a phishing scam?",
+         options:[
+           "To crash the victim's computer or disrupt their network",
+           "To obtain credentials, money, or data, or deliver malware through deception",
+           "To test whether an organization's security awareness is adequate",
+           "To send advertisements disguised as legitimate messages"
+         ],
+         correct:1,
+         explanation:"The immediate action — clicking a link, entering a password — is a stepping stone to the real goal: stealing credentials, money, data, or installing malware."},
+        {id:"Q1046",
+         question:"What does the term 'smishing' mean?",
+         options:[
+           "Phishing conducted through voice or phone calls",
+           "Phishing conducted through social media direct messages",
+           "Phishing conducted through SMS or text messages",
+           "Phishing conducted through manipulated search results"
+         ],
+         correct:2,
+         explanation:"Smishing = SMS + phishing. Attacks delivered via text message. Vishing covers voice calls; angler phishing covers social media."}
+      ]
+    },
+    {
+      id:2, title:"Attack Variants",
+      subtitle:"Targeted, advanced, and organizational phishing types",
+      color:"#1565c0",
+      outline:[
+        "Spear phishing: personalized targeted attacks",
+        "Whaling: targeting senior executives",
+        "Clone phishing: copying legitimate emails",
+        "Pharming: silent URL redirection via DNS",
+        "Angler phishing: fake social media customer service",
+        "Search engine phishing: malicious top results",
+        "Cloud-based phishing: trusted platforms as bait",
+        "Business Email Compromise (BEC)"
+      ],
+      flashcards:[
+        {
+          img: IMAGES.spear, imgBg: BG_COLORS.spear,
+          icon:"🎯", term:"Spear Phishing",
+          points:[
+            {i:"🔍", t:"Unlike mass phishing, spear phishing <strong>targets one specific person</strong> — using research to seem credible."},
+            {i:"🔗", t:"The attacker looks up your <strong>LinkedIn, social media, or company page</strong> to find real names, projects, and colleagues."},
+            {i:"✉️", t:"Example: <em>\"Hi Sarah, regarding the Henderson project you're working on — please review the updated contract here.\"</em>"},
+            {i:"⚠️", t:"Because it feels <strong>personal and familiar</strong>, most people don't suspect it."}
+          ]
+        },
+        {
+          img: IMAGES.exec, imgBg: BG_COLORS.exec,
+          icon:"🐳", term:"Whaling",
+          points:[
+            {i:"👔", t:"Spear phishing aimed at <strong>big targets</strong> — CEOs, CFOs, or board members. Hence \"whaling.\""},
+            {i:"💰", t:"Executives can authorize <strong>large wire transfers</strong> and hold access to sensitive company data."},
+            {i:"🤝", t:"Messages are highly polished — impersonating lawyers, investors, or regulators."},
+            {i:"💡", t:"Example: A CFO receives an \"urgent\" email from a fake lawyer requesting a confidential acquisition wire transfer."}
+          ]
+        },
+        {
+          img: IMAGES.clone, imgBg: BG_COLORS.clone,
+          icon:"📋", term:"Clone Phishing",
+          points:[
+            {i:"📄", t:"The attacker <strong>copies a real email you've received before</strong> — same logo, format, and subject line."},
+            {i:"🔗", t:"The only change: the links or attachments are <strong>replaced with malicious versions</strong>."},
+            {i:"📩", t:"Often sent as a \"resend\" or \"follow-up\" of the original — so you think it's legitimate."},
+            {i:"⚠️", t:"Dangerous because you <em>remember</em> the original email — making you less likely to question it."}
+          ]
+        },
+        {
+          img: IMAGES.dns, imgBg: BG_COLORS.dns,
+          icon:"🔀", term:"Pharming",
+          points:[
+            {i:"🌐", t:"Corrupts your <strong>DNS settings</strong> so that typing a real URL (e.g., yourbank.com) redirects you to a fake site."},
+            {i:"⌨️", t:"You <strong>don't even click a suspicious link</strong> — you type the correct address and still end up on a fake page."},
+            {i:"👁️", t:"The fake site looks <strong>identical</strong> to the real one — same logo, same layout."},
+            {i:"💡", t:"This is why security experts recommend checking the <strong>padlock icon and full domain</strong> in your browser's address bar."}
+          ]
+        },
+        {
+          img: IMAGES.social, imgBg: BG_COLORS.social,
+          icon:"📲", term:"Angler Phishing",
+          points:[
+            {i:"😤", t:"You publicly complain about a brand on Twitter/X or Facebook: <em>\"@BankCo your app is broken!\"</em>"},
+            {i:"⚡", t:"Within minutes, a <strong>fake customer service account</strong> (e.g., @BankCo_Help) responds with a \"fix.\""},
+            {i:"🔗", t:"They send a link to a fake support page that <strong>asks for your account login</strong>."},
+            {i:"🔎", t:"Check the account carefully — fake accounts usually have low follower counts and were created recently."}
+          ]
+        },
+        {
+          img: IMAGES.search, imgBg: BG_COLORS.search,
+          icon:"🔍", term:"Search Engine Phishing",
+          points:[
+            {i:"📈", t:"Attackers build convincing <strong>fake websites</strong> for banks, tax refund services, or government portals."},
+            {i:"🥇", t:"These fake sites are <strong>paid to appear at the top of search results</strong> — above the real sites."},
+            {i:"🖱️", t:"You search for your bank's login page, click the first result — and it's a clone site stealing your credentials."},
+            {i:"💡", t:"Safe habit: <strong>bookmark official sites</strong> directly instead of searching for them every time."}
+          ]
+        },
+        {
+          img: IMAGES.cloud, imgBg: BG_COLORS.cloud,
+          icon:"☁️", term:"Cloud-Based Phishing",
+          points:[
+            {i:"✅", t:"Malicious files are hosted on <strong>trusted platforms</strong> like Google Drive, OneDrive, or Dropbox."},
+            {i:"🚫", t:"Because these services are trusted, <strong>spam filters often let the link through</strong>."},
+            {i:"📂", t:"The \"shared document\" leads to a page asking you to <strong>log in with your Google or Microsoft credentials</strong>."},
+            {i:"💡", t:"Be cautious of unexpected \"shared document\" links, even from platforms you trust."}
+          ]
+        },
+        {
+          img: IMAGES.bec, imgBg: BG_COLORS.bec,
+          icon:"🏢", term:"Business Email Compromise (BEC)",
+          points:[
+            {i:"👨‍💼", t:"Attacker impersonates a <strong>company executive, vendor, or lawyer</strong> via email."},
+            {i:"💸", t:"Request: \"Transfer $50,000 to this new account for the acquisition — keep this confidential.\""},
+            {i:"🚨", t:"No malware is used — just a <strong>convincing email</strong> and pressure to bypass normal approval steps."},
+            {i:"🛡️", t:"Defense: <strong>always verify large financial requests</strong> by calling the person directly using a known number."}
+          ]
+        }
+      ],
+      quiz:[
+        {id:"Q1003",
+         question:"An email addresses you by name, references your recent project, and asks you to send related files. This is MOST likely:",
+         options:[
+           "Mass email phishing — broad campaigns can seem personal",
+           "Smishing — this is how SMS attacks are typically worded",
+           "Spear phishing — personalized and targeted at you specifically",
+           "Clone phishing — copied from a real previous email"
+         ],
+         correct:2,
+         explanation:"Use of your name and a real project detail are hallmarks of spear phishing — a researched attack targeting a specific individual. Mass phishing would not include this level of personalization."},
+        {id:"Q1041",
+         question:"What does the term 'whaling' mean in cybersecurity?",
+         options:[
+           "Mass phishing campaigns targeting random internet users",
+           "Phishing specifically targeting senior executives or high-value individuals",
+           "Attacks on maritime or shipping industry organizations",
+           "DNS-based redirection attacks"
+         ],
+         correct:1,
+         explanation:"Whaling is spear phishing aimed at 'big fish' — C-suite executives and board members whose authority and access make them especially valuable targets."},
+        {id:"Q1052",
+         question:"What is 'clone phishing'?",
+         options:[
+           "Creating multiple identical fake websites for the same brand",
+           "Copying a legitimate email and resending it with malicious links or attachments replacing the originals",
+           "Impersonating someone's voice in a phone call",
+           "Sending identical phishing messages to duplicate contact lists"
+         ],
+         correct:1,
+         explanation:"Clone phishing copies a real email the victim has previously received, keeping the branding and format intact, but swapping the links or attachments for malicious versions."},
+        {id:"Q1053",
+         question:"What is 'pharming'?",
+         options:[
+           "Sending phishing emails to agricultural businesses",
+           "Phishing using farming-themed websites to gain trust",
+           "Redirecting users to fake websites by corrupting DNS or device settings — even when they type the correct URL",
+           "A phishing toolkit used by organized criminal groups"
+         ],
+         correct:2,
+         explanation:"Pharming is particularly dangerous because it undermines the habit of carefully typing a known URL. By corrupting DNS or local settings, the attacker redirects the victim silently — no suspicious link required."}
+      ]
+    },
+    {
+      id:3, title:"Detection & Response",
+      subtitle:"Red flags, URL anatomy, psychology, and what to do",
+      color:"#2e7d32",
+      outline:[
+        "Common red flags in phishing messages",
+        "Spotting suspicious sender addresses",
+        "Reading a URL: identifying the true domain",
+        "Psychological manipulation tactics used in phishing",
+        "Attachment risk levels by file type",
+        "CEO fraud and BEC warning patterns",
+        "Step-by-step: what to do when you suspect phishing"
+      ],
+      flashcards:[
+        {
+          img: IMAGES.redflags, imgBg: BG_COLORS.redflags,
+          icon:"🚩", term:"Red Flags in Messages",
+          points:[
+            {i:"⚡", t:"<strong>Urgency + threats:</strong> \"FINAL WARNING — your account will be deleted in 24 hours!\""},
+            {i:"👤", t:"<strong>Generic greeting:</strong> \"Dear Customer\" from a company that would know your name."},
+            {i:"✍️", t:"<strong>Spelling/grammar errors</strong> — poor writing from a supposedly professional organization."},
+            {i:"🔑", t:"<strong>Asking for credentials</strong> via a link — no legitimate company needs your password this way."},
+            {i:"🤫", t:"<strong>Secrecy request:</strong> \"Don't tell anyone about this\" — a huge red flag."}
+          ]
+        },
+        {
+          img: IMAGES.sender, imgBg: BG_COLORS.sender,
+          icon:"📬", term:"Spotting Suspicious Senders",
+          points:[
+            {i:"👁️", t:"Always check the <strong>actual email domain</strong>, not just the friendly display name."},
+            {i:"🔤", t:"Watch for <strong>misspellings:</strong> paypa<em>1</em>.com (that's the number 1, not L), apple-id-verify.net"},
+            {i:"📧", t:"<strong>Free webmail from a corporation</strong> is suspicious: support@yourbank.gmail.com"},
+            {i:"⚠️", t:"Brand names used as <em>subdomains</em>: support@paypal.<strong>fake-site.com</strong> — the real domain is fake-site.com."}
+          ]
+        },
+        {
+          img: IMAGES.url, imgBg: BG_COLORS.url,
+          icon:"🔗", term:"Reading a URL: Find the True Domain",
+          points:[
+            {i:"📍", t:"The <strong>true domain</strong> is always the part right before the first <code>/</code> in the URL."},
+            {i:"🔎", t:"In <code>http://yourbank.secure-update.com/login</code> — the true domain is <strong>secure-update.com</strong>, not \"yourbank.\""},
+            {i:"↔️", t:"\"yourbank\" is just a <strong>subdomain</strong> — anyone can create subdomains with any name they want."},
+            {i:"💡", t:"Read URLs <strong>right to left</strong> starting before the first slash — that reveals the real owner."}
+          ]
+        },
+        {
+          img: IMAGES.tactics, imgBg: BG_COLORS.tactics,
+          icon:"🧪", term:"Psychological Manipulation Tactics",
+          points:[
+            {i:"⏰", t:"<strong>Urgency:</strong> \"Act within 24 hours or lose access\" — pressure to skip thinking."},
+            {i:"😨", t:"<strong>Fear:</strong> \"Your account has been compromised\" — panic overrides caution."},
+            {i:"👑", t:"<strong>Authority:</strong> \"This is your CEO / IT department / the IRS\" — we obey authority figures."},
+            {i:"🎁", t:"<strong>Scarcity / Reward:</strong> \"You've been selected — claim before it expires.\""},
+            {i:"💡", t:"If a message makes you feel <strong>panicked or rushed</strong> — that's the signal to slow down, not speed up."}
+          ]
+        },
+        {
+          img: IMAGES.attach, imgBg: BG_COLORS.attach,
+          icon:"📎", term:"Attachment Risk Levels",
+          points:[
+            {i:"🔴", t:"<strong>High risk:</strong> .exe, .msi — these run programs directly on your device."},
+            {i:"🟠", t:"<strong>Medium risk:</strong> .docx / .xlsx with macros, .pdf (can embed scripts), .zip / .rar archives."},
+            {i:"🟢", t:"<strong>Lower risk:</strong> .txt (plain text, cannot execute code on its own)."},
+            {i:"⚠️", t:"<strong>Never enable macros</strong> in an Office file received by email — verify first by calling the sender directly."}
+          ]
+        },
+        {
+          img: IMAGES.ceofraud, imgBg: BG_COLORS.ceofraud,
+          icon:"👔", term:"CEO Fraud Warning Signs",
+          points:[
+            {i:"🤫", t:"\"Keep this confidential — don't tell anyone else in the company.\""},
+            {i:"⚡", t:"\"I'm in a meeting, just do this now\" — urgency + authority to bypass normal approval."},
+            {i:"💸", t:"Request involves <strong>wire transfers to new accounts, gift cards, or payroll data</strong>."},
+            {i:"🛑", t:"<strong>No legitimate business transaction</strong> requires bypassing your company's standard financial approval process."}
+          ]
+        },
+        {
+          img: IMAGES.response, imgBg: BG_COLORS.response,
+          icon:"🛡️", term:"What To Do When You're Suspicious",
+          points:[
+            {i:"🚫", t:"<strong>Step 1:</strong> Don't click any link or open any attachment."},
+            {i:"🔇", t:"<strong>Step 2:</strong> Don't reply to the message — even to ask if it's real."},
+            {i:"📞", t:"<strong>Step 3:</strong> Contact the sender through a <em>separate, known channel</em> (official phone number, verified email)."},
+            {i:"🌐", t:"<strong>Step 4:</strong> Type the organization's URL directly into your browser — don't use any link from the message."},
+            {i:"🆘", t:"<strong>If you already clicked:</strong> change your password immediately from a trusted device and report it to IT."}
+          ]
+        }
+      ],
+      quiz:[
+        {id:"Q1008",
+         question:"Legitimate companies often use urgent subject lines like 'FINAL WARNING' in their official emails.",
+         options:[
+           "True — banks and tech companies use these for important security alerts",
+           "False — urgent, all-caps threats are phishing red flags, not standard business communication"
+         ],
+         correct:1,
+         explanation:"False. Legitimate organizations do not use threatening subject lines to pressure you. 'FINAL WARNING' and similar phrases trigger anxiety and override careful thinking — they are phishing tactics."},
+        {id:"Q1010",
+         question:"In the URL http://yourbank.secure-update.com/login — which part is MOST suspicious?",
+         options:[
+           "http:// (the protocol — no encryption used)",
+           "yourbank (the subdomain placed before the domain)",
+           "secure-update.com (the true domain — the actual site owner)",
+           "/login (the path — the page name)"
+         ],
+         correct:2,
+         explanation:"The true domain is secure-update.com — the actual owner of the site, which has nothing to do with any bank. 'yourbank' is just a subdomain the attacker chose freely."},
+        {id:"Q1013",
+         question:"Which attachment type is the LEAST risky to download from an unknown source?",
+         options:[
+           ".exe — executable programs that run directly",
+           ".docx — Word documents that may contain macros",
+           ".zip — compressed archives that conceal their contents",
+           ".txt — plain text files"
+         ],
+         correct:3,
+         explanation:".txt (plain text) cannot execute code on its own. While it may contain phishing instructions, it poses the least technical risk compared to .exe, macro-enabled Office docs, or archives."},
+        {id:"Q1101",
+         question:"A message reads: 'Your account will be permanently deleted in 24 hours unless you verify your identity now.' What psychological tactic is this?",
+         options:[
+           "Social proof — implying many others have already verified",
+           "Flattery — making the recipient feel special or important",
+           "Urgency and fear — time pressure combined with threat of loss",
+           "Reciprocity — offering something in exchange for compliance"
+         ],
+         correct:2,
+         explanation:"The 24-hour deadline creates time pressure (urgency), and the threat of account deletion creates fear of loss. Together they are designed to make you act quickly without scrutinizing the message."}
+      ]
+    }
+  ],
+  finalQuiz:[
+    {id:"Q1040", question:"What does the term 'vishing' mean?",
+     options:["Phishing via SMS text messages","Phishing via voice or phone calls","Phishing via fake social media profiles","Phishing via compromised public Wi-Fi networks"],
+     correct:1, explanation:"Vishing = voice + phishing. Attackers call victims posing as tech support, government agencies, or banks to extract information or gain remote access."},
+    {id:"Q1001", question:"Phishing only happens through email.",
+     options:["True — email is the only channel used","False — phishing also occurs through SMS, phone calls, social media, fake websites, and more"],
+     correct:1, explanation:"False. While email is the most common channel, phishing is delivered via SMS, voice calls, social media, search results, and cloud platforms."},
+    {id:"Q1039", question:"Spear phishing is characterized by which of the following?",
+     options:["High-volume mass campaigns with identical generic messages","Attacks conducted exclusively via telephone","Personalized messages using researched details about the specific target","Attacks that rely on corrupting DNS infrastructure"],
+     correct:2, explanation:"Spear phishing is defined by personalization. The attacker researches the target and uses real names, roles, projects, or colleagues to seem credible."},
+    {id:"Q1054", question:"Which BEST describes Business Email Compromise (BEC)?",
+     options:["Mass phishing emails sent simultaneously to all employees","Targeted attacks impersonating authority figures to commit financial or data fraud","Installing malware via infected email attachments","Gaining unauthorized access to a company's email server"],
+     correct:1, explanation:"BEC is targeted and organizational. Attackers impersonate executives or vendors — no malware needed — to redirect payments or extract sensitive information."},
+    {id:"Q1055", question:"What is a 'CEO fraud' phishing scam?",
+     options:["A CEO who personally conducts phishing attacks on competitors","Hacking the CEO's email account for corporate espionage","An attacker impersonating the CEO to pressure employees into unauthorized actions","A scam promising a business meeting with a CEO in exchange for personal details"],
+     correct:2, explanation:"CEO fraud involves posing as the CEO to send an urgent, secretive request — bypassing normal approval channels to transfer money or share data."},
+    {id:"Q1056", question:"What is 'angler phishing'?",
+     options:["Phishing messages written using fishing metaphors","Impersonating brand customer service on social media to redirect users to fake support pages","Automated bots casting wide phishing nets across social platforms","Phishing attacks from sports-related websites"],
+     correct:1, explanation:"Angler phishing uses fake customer service accounts on social media. Attackers intercept users publicly complaining about brands and offer fake 'help.'"},
+    {id:"Q1057", question:"What is 'search engine phishing'?",
+     options:["Phishing emails disguised as search engine notifications","Building fake websites optimized or paid to appear at the top of search results","Hacking search engine databases to inject malicious results","Sending phishing only to users who searched for specific terms"],
+     correct:1, explanation:"Search engine phishing involves creating convincing fake websites that rank at the top of results, trapping users who click thinking they found the real site."},
+    {id:"Q1004", question:"Whaling attacks usually target senior executives.",
+     options:["True — whaling specifically refers to high-value executive targets","False — whaling targets any randomly selected employee"],
+     correct:0, explanation:"True. 'Whaling' specifically refers to phishing aimed at CEOs, CFOs, board members, and other executives whose authority makes them especially valuable targets."},
+    {id:"Q1002", question:"You receive a message saying your account will be deleted unless you click 'verify now.' Best first step?",
+     options:["Click the link immediately to protect your account","Reply to the message asking if it is genuine","Ignore the link; navigate directly to the organization's official website","Forward the message to friends to see if they got it too"],
+     correct:2, explanation:"Never use a link from a suspicious message. Log in through the real website instead. The link may lead to a fake login page designed to steal credentials."},
+    {id:"Q1066", question:"What is 'cloud-based' phishing?",
+     options:["Phishing attacks that exclusively target cloud companies","Hosting phishing content on trusted platforms like Google Drive to bypass spam filters","Attacking weather forecasting services through phishing","Using cloud resources to send higher volumes of phishing emails"],
+     correct:1, explanation:"Cloud-based phishing exploits the legitimacy of platforms like Google Drive. Links bypass spam filters because they point to trusted services, but the hosted content redirects to a phishing page."},
+    {id:"Q1073", question:"You receive an email from 'IT Support' asking you to install an attachment labeled 'urgent security update.' What should you do?",
+     options:["Install it — it claims to be from IT Support","Install it only after running a virus scan first","Contact your IT department directly through a known phone number or internal system to verify","Reply to the email asking for confirmation before installing"],
+     correct:2, explanation:"Real IT departments deploy patches through managed systems, not email attachments. Always verify through a separate, known-good channel. Replying only confirms contact with a potential attacker."},
+    {id:"Q1080", question:"Matt receives a text: 'Your package delivery failed. Click here to reschedule.' He is not expecting any package. Safest action?",
+     options:["Click the link — it could be a gift from someone he forgot about","Reply asking for a tracking number to verify","Ignore and delete the text","Forward it to the delivery company's official number to investigate"],
+     correct:2, explanation:"Classic smishing. No tracking number, an unsolicited shortened link, and Matt is not expecting a delivery. The safest action is to delete the message."},
+    {id:"Q1081", question:"Collin receives an email from his university asking him to log into a 'new student portal.' The URL is slightly misspelled. What should Collin do?",
+     options:["Log in using the link — universities do launch new portals","Try logging in with an incorrect password first to test the site","Do not use the link; contact the university through official channels to verify","Email back asking whether the migration is legitimate"],
+     correct:2, explanation:"A misspelled URL is a clear red flag. Collin should contact the university through its known official website or verified phone number — not reply to the suspicious email."}
+  ]
+};
+
+// ─────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────
+let s = {
+  screen:'start', module:0, card:0, flipped:false,
+  quizQ:0, quizAnswered:false, quizSelected:-1,
+  moduleScores:[], finalQ:0, finalAnswered:false,
+  finalSelected:-1, finalScores:[], isFinal:false
+};
+const COLORS = {1:'#c0392b', 2:'#1565c0', 3:'#2e7d32', final:'#5c3d9e'};
+const LETS = ['A','B','C','D','E'];
+function accent(c){ document.documentElement.style.setProperty('--accent', c); }
+function go(sc){ s.screen=sc; render(); window.scrollTo({top:0, behavior:'smooth'}); }
+
+// ─────────────────────────────────────────
+//  EXIT MODAL
+// ─────────────────────────────────────────
+function showExitModal(){
+  document.getElementById('modal-root').innerHTML = `
+    <div class="modal-overlay" onclick="closeModalOnOverlay(event)">
+      <div class="modal-box">
+        <div class="modal-icon">🚪</div>
+        <div class="modal-h">Exit to Home?</div>
+        <p class="modal-p">Your progress in the current module will be lost. Module scores you've already completed will reset.</p>
+        <div class="modal-btns">
+          <button class="btn btn-ghost" onclick="closeModal()">Keep Studying</button>
+          <button class="btn btn-danger" onclick="confirmExit()">Yes, Exit</button>
+        </div>
+      </div>
+    </div>`;
+}
+function closeModal(){ document.getElementById('modal-root').innerHTML=''; }
+function closeModalOnOverlay(e){ if(e.target.classList.contains('modal-overlay')) closeModal(); }
+function confirmExit(){
+  closeModal();
+  s={screen:'start',module:0,card:0,flipped:false,
+     quizQ:0,quizAnswered:false,quizSelected:-1,
+     moduleScores:[],finalQ:0,finalAnswered:false,
+     finalSelected:-1,finalScores:[],isFinal:false};
+  accent(COLORS[1]);
+  render();
+}
+
+// ─────────────────────────────────────────
+//  TOPBAR
+// ─────────────────────────────────────────
+function mkTopbar(showExit=true){
+  const sc = s.screen; const mo = s.module;
+  let cur = 0;
+  if(sc==='moduleIntro'||sc==='flashcards') cur=mo*2;
+  else if(sc==='quizIntro'||sc==='quiz'||sc==='moduleDone') cur=mo*2+1;
+  else if(sc==='finalIntro'||sc==='finalQuiz') cur=6;
+  else if(sc==='results') cur=7;
+  const pips = Array.from({length:7},(_,i)=>{
+    let c='step-pip';
+    if(i<cur) c+=' done'; else if(i===cur) c+=' active';
+    return `<div class="${c}"></div>`;
+  }).join('');
+  const exitBtn = showExit
+    ? `<button class="exit-btn" onclick="showExitModal()">✕ Exit</button>` : '';
+  return `<div class="topbar">
+    <div class="topbar-brand">Phishing Study Deck</div>
+    <div class="step-track">${pips}</div>
+    ${exitBtn}
+  </div>`;
+}
+
+// ─────────────────────────────────────────
+//  SCREENS
+// ─────────────────────────────────────────
+function scStart(){
+  return `<div class="start-bg fade-in">
+    <div class="start-hero">
+      <p class="s-kicker">Cybersecurity Literacy · Undergraduate</p>
+      <h1 class="s-title">Understanding<br>Phishing</h1>
+      <p class="s-sub">Flashcards with real images, checkpoint quizzes, and a final assessment — built from real course questions.</p>
+      <div class="s-tags">
+        <span class="s-tag">Module 1 — Fundamentals</span>
+        <span class="s-tag">Module 2 — Attack Variants</span>
+        <span class="s-tag">Module 3 — Detection & Response</span>
+        <span class="s-tag">Final Quiz</span>
+      </div>
+      <div class="s-stats">
+        <div><span class="stat-n">21</span><span class="stat-l">Flashcards</span></div>
+        <div><span class="stat-n">11</span><span class="stat-l">Checkpoint Qs</span></div>
+        <div><span class="stat-n">13</span><span class="stat-l">Final Quiz</span></div>
+      </div>
+      <button class="btn btn-p" onclick="startLearning()" style="padding:15px 40px;font-size:0.96rem;">Begin Studying →</button>
+    </div>
+  </div>`;
+}
+
+function scModuleIntro(){
+  const m = DATA.modules[s.module];
+  accent(m.color);
+  const items = m.outline.map(o=>`<li>${o}</li>`).join('');
+  return `<div class="fade-in">${mkTopbar()}
+    <div class="content">
+      <span class="kicker">Module ${m.id} of 3</span>
+      <h2 class="section-h">${m.title}</h2>
+      <p class="lead">${m.subtitle}</p>
+      <div class="mod-card">
+        <div class="mod-circle" style="background:${m.color}">${m.id}</div>
+        <div class="mod-info">
+          <h3>${m.title}</h3>
+          <p>${m.flashcards.length} flashcards · ${m.quiz.length} checkpoint questions</p>
+        </div>
+      </div>
+      <p class="body-t" style="font-weight:600;margin-bottom:6px;">Topics covered:</p>
+      <ul class="outline">${items}</ul>
+      <button class="btn btn-p btn-full" onclick="beginModule()">Start Flashcards →</button>
+    </div>
+  </div>`;
+}
+
+function scFlashcards(){
+  const m = DATA.modules[s.module];
+  const cards = m.flashcards;
+  const c = cards[s.card];
+  const last = s.card === cards.length-1;
+  const pips = cards.map((_,i)=>{
+    let cls='card-pip';
+    if(i<s.card) cls+=' done'; else if(i===s.card) cls+=' active';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+
+  const prevBtn = s.card>0
+    ? `<button class="btn btn-o" onclick="prevCard()">← Back</button>`
+    : `<button class="btn btn-g" disabled>← Back</button>`;
+  const nextBtn = last
+    ? `<button class="btn btn-p" onclick="goToQuiz()">Take Quiz →</button>`
+    : `<button class="btn btn-p" onclick="nextCard()">Next →</button>`;
+
+  const ptItems = c.points.map(p=>
+    `<li><span class="pt-icon">${p.i}</span><span>${p.t}</span></li>`
+  ).join('');
+
+  // Front image
+  const frontImg = `<div class="fc-img-placeholder" style="background:${c.imgBg||'#1a1a2e'}">
+    <img src="${c.img}" alt="${c.term}" style="width:100%;height:150px;object-fit:cover;display:block;border-radius:var(--r) var(--r) 0 0;opacity:0.82;" onerror="this.parentElement.innerHTML='<span style=font-size:3.5rem>${c.icon}</span>'" />
+  </div>`;
+
+  return `<div class="fade-in">${mkTopbar()}
+    <div class="content">
+      <div class="card-top">
+        <span class="card-lbl">Module ${m.id} · Flashcards</span>
+        <span class="card-ctr">${s.card+1} / ${cards.length}</span>
+      </div>
+      <div class="card-pips">${pips}</div>
+      <div class="fc-scene" onclick="flipCard()">
+        <div id="fc" class="fc ${s.flipped?'flipped':''}">
+          <div class="fc-face fc-front">
+            ${frontImg}
+            <div class="fc-front-body">
+              <div class="fc-term">${c.term}</div>
+              <div class="fc-hint">Tap to reveal key points</div>
+            </div>
+          </div>
+          <div class="fc-face fc-back">
+            <div class="fc-back-inner">
+              <div class="fc-blbl">Key Points</div>
+              <div class="fc-bhead">${c.term}</div>
+              <ul class="fc-points">${ptItems}</ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="flip-hint" id="fhint">${s.flipped?'Tap to flip back':'Tap the card to reveal key points'}</p>
+      <div class="card-nav">${prevBtn}${nextBtn}</div>
+    </div>
+  </div>`;
+}
+
+function scQuizIntro(){
+  const m = DATA.modules[s.module];
+  return `<div class="fade-in">${mkTopbar()}
+    <div class="content">
+      <span class="kicker">Module ${m.id} Checkpoint</span>
+      <h2 class="section-h">Quick Check</h2>
+      <div class="qgate">
+        <div class="qgate-icon">✏️</div>
+        <div class="qgate-title">Ready for ${m.quiz.length} questions?</div>
+        <p class="qgate-sub">You've covered all ${m.flashcards.length} flashcards in this module. Test what you've learned. Read each question carefully — there's no time limit.</p>
+      </div>
+      <button class="btn btn-p btn-full" onclick="startQuiz()">Start Quiz →</button>
+    </div>
+  </div>`;
+}
+
+function buildQuizUI(questions, qIdx, answered, selected, isFin){
+  const q = questions[qIdx];
+  const last = qIdx === questions.length-1;
+  const pfx = isFin ? 'Final Quiz' : `Module ${DATA.modules[s.module].id} Quiz`;
+  const opts = q.options.map((opt,i)=>{
+    let cls='opt';
+    if(answered){
+      if(i===q.correct) cls+=' correct';
+      else if(i===selected && i!==q.correct) cls+=' wrong';
+    }
+    const fn = answered ? '' : (isFin ? `answerFinal(${i})` : `answerQuiz(${i})`);
+    return `<button class="${cls}" onclick="${fn}" ${answered?'disabled':''}>
+      <span class="opt-l">${LETS[i]}</span><span>${opt}</span>
+    </button>`;
+  }).join('');
+  const fb = answered ? `<div class="feedback ${selected===q.correct?'fb-ok':'fb-no'}">
+    <strong>${selected===q.correct?'✓ Correct.':'✗ Incorrect.'}</strong> ${q.explanation}
+  </div>` : '';
+  const nextFn = isFin ? 'nextFinalQ()' : 'nextQuizQ()';
+  const nextLbl = last ? (isFin ? 'See Final Score' : 'Finish Module') : 'Next Question →';
+  const nBtn = answered ? `<button class="btn btn-p btn-full" onclick="${nextFn}">${nextLbl}</button>` : '';
+  return `<span class="q-prog">${pfx} · Question ${qIdx+1} of ${questions.length}</span>
+    <p class="q-text">${q.question}</p>
+    <div class="opts">${opts}</div>${fb}${nBtn}`;
+}
+
+function scQuiz(){
+  const m = DATA.modules[s.module]; accent(m.color);
+  return `<div class="fade-in">${mkTopbar()}
+    <div class="content">${buildQuizUI(m.quiz, s.quizQ, s.quizAnswered, s.quizSelected, false)}</div>
+  </div>`;
+}
+
+function scModuleDone(){
+  const m = DATA.modules[s.module];
+  const sc = s.moduleScores[s.module];
+  const pct = Math.round((sc.correct/sc.total)*100);
+  const pass = pct>=60;
+  const msg = sc.correct===sc.total ? 'Perfect score — those flashcards paid off!'
+    : pass ? 'Good work. Review any cards you found tricky before continuing.'
+    : "No worries — revisit those flashcards, then move on.";
+  const isLast = s.module === DATA.modules.length-1;
+  const nextLbl = isLast ? 'Go to Final Quiz →' : `Start Module ${s.module+2} →`;
+  return `<div class="fade-in">${mkTopbar()}
+    <div class="content">
+      <span class="kicker">Module ${m.id} Complete</span>
+      <h2 class="section-h">${m.title}</h2>
+      <div class="done-card">
+        <div class="score-ring" style="background:${pass?'var(--correct)':'var(--wrong)'}">
+          <div class="ring-n">${sc.correct}/${sc.total}</div>
+          <div class="ring-d">${pct}%</div>
+        </div>
+        <div class="done-h">${pct===100?'🎉 Perfect!':pass?'✓ Well done':'Keep going'}</div>
+        <p class="done-s">${msg}</p>
+      </div>
+      <button class="btn btn-p btn-full" onclick="continueAfterModule()">${nextLbl}</button>
+    </div>
+  </div>`;
+}
+
+function scFinalIntro(){
+  accent(COLORS.final);
+  return `<div class="fade-in">${mkTopbar()}
+    <div class="content">
+      <span class="kicker">All Modules Complete</span>
+      <h2 class="section-h">Final Assessment</h2>
+      <p class="lead">You've completed all three modules. Now test your full understanding with a comprehensive quiz covering every topic.</p>
+      <div class="qgate">
+        <div class="qgate-icon">🏁</div>
+        <div class="qgate-title">13 questions. All topics.</div>
+        <p class="qgate-sub">Covers fundamentals, all attack variants, URL anatomy, detection techniques, and real-world judgment scenarios.</p>
+      </div>
+      <button class="btn btn-p btn-full" onclick="startFinalQuiz()">Begin Final Quiz →</button>
+    </div>
+  </div>`;
+}
+
+function scFinalQuiz(){
+  accent(COLORS.final);
+  return `<div class="fade-in">${mkTopbar()}
+    <div class="content">${buildQuizUI(DATA.finalQuiz, s.finalQ, s.finalAnswered, s.finalSelected, true)}</div>
+  </div>`;
+}
+
+function scResults(){
+  const fC = s.finalScores.filter(Boolean).length;
+  const fT = DATA.finalQuiz.length;
+  const mC = s.moduleScores.reduce((a,x)=>a+x.correct,0);
+  const mT = s.moduleScores.reduce((a,x)=>a+x.total,0);
+  const gC = mC+fC, gM = mT+fT;
+  const gPct = Math.round((gC/gM)*100);
+  const grade = gPct>=90?'A':gPct>=80?'B':gPct>=70?'C':gPct>=60?'D':'F';
+  const msg = gPct>=90 ? 'Excellent. You have a solid command of phishing concepts across all major vectors.'
+    : gPct>=70 ? 'Good understanding overall. Review explanations for any questions you missed.'
+    : 'Keep studying. Revisit the flashcards for modules where you scored below 60%.';
+  const rows = DATA.modules.map((m,i)=>{
+    const sc = s.moduleScores[i];
+    const pct = Math.round((sc.correct/sc.total)*100);
+    const t = pct>=60?'tag-pass':'tag-fail';
+    return `<li>
+      <div class="bd-lbl"><div class="bd-dot" style="background:${m.color}"></div>${m.title}</div>
+      <div style="display:flex;align-items:center;gap:9px;">
+        <span class="tag ${t}">${pct>=60?'Passed':'Review'}</span>
+        <span class="bd-sc">${sc.correct}/${sc.total}</span>
+      </div>
+    </li>`;
+  }).join('');
+  const fPct = Math.round((fC/fT)*100);
+  return `<div class="fade-in">
+    <div class="res-hero">
+      <p class="res-kicker">Final Results</p>
+      <div class="res-grade">${grade}</div>
+      <p class="res-sub">${gC} / ${gM} correct · ${gPct}%</p>
+      <p class="res-msg">${msg}</p>
+    </div>
+    <div class="content">
+      <span class="kicker">Score Breakdown</span>
+      <ul class="bd">${rows}
+        <li>
+          <div class="bd-lbl"><div class="bd-dot" style="background:${COLORS.final}"></div>Final Quiz</div>
+          <div style="display:flex;align-items:center;gap:9px;">
+            <span class="tag ${fPct>=60?'tag-ok':'tag-fail'}">${fPct>=60?'Passed':'Review'}</span>
+            <span class="bd-sc">${fC}/${fT}</span>
+          </div>
+        </li>
+      </ul>
+      <hr class="div">
+      <button class="btn btn-o btn-full" onclick="restartAll()">↺ Start Over</button>
+    </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────
+//  ACTIONS
+// ─────────────────────────────────────────
+function startLearning(){ s.module=0; go('moduleIntro'); }
+function beginModule(){ s.card=0; s.flipped=false; go('flashcards'); }
+function flipCard(){
+  s.flipped=!s.flipped;
+  const fc=document.getElementById('fc');
+  if(fc) fc.classList.toggle('flipped',s.flipped);
+  const hint=document.getElementById('fhint');
+  if(hint) hint.textContent=s.flipped?'Tap to flip back':'Tap the card to reveal key points';
+}
+function nextCard(){ s.card++; s.flipped=false; go('flashcards'); }
+function prevCard(){ if(s.card>0){s.card--; s.flipped=false; go('flashcards');} }
+function goToQuiz(){ s.quizQ=0; s.quizAnswered=false; s.quizSelected=-1; go('quizIntro'); }
+function startQuiz(){ go('quiz'); }
+function answerQuiz(i){ s.quizSelected=i; s.quizAnswered=true; go('quiz'); }
+function nextQuizQ(){
+  const m=DATA.modules[s.module];
+  if(!s.moduleScores[s.module]) s.moduleScores[s.module]={correct:0,total:0};
+  s.moduleScores[s.module].total++;
+  if(s.quizSelected===m.quiz[s.quizQ].correct) s.moduleScores[s.module].correct++;
+  if(s.quizQ<m.quiz.length-1){ s.quizQ++; s.quizAnswered=false; s.quizSelected=-1; go('quiz'); }
+  else { go('moduleDone'); }
+}
+function continueAfterModule(){
+  if(s.module<DATA.modules.length-1){ s.module++; go('moduleIntro'); }
+  else { s.isFinal=true; go('finalIntro'); }
+}
+function startFinalQuiz(){ s.finalQ=0; s.finalAnswered=false; s.finalSelected=-1; s.finalScores=[]; go('finalQuiz'); }
+function answerFinal(i){ s.finalSelected=i; s.finalAnswered=true; go('finalQuiz'); }
+function nextFinalQ(){
+  s.finalScores.push(s.finalSelected===DATA.finalQuiz[s.finalQ].correct);
+  if(s.finalQ<DATA.finalQuiz.length-1){ s.finalQ++; s.finalAnswered=false; s.finalSelected=-1; go('finalQuiz'); }
+  else { go('results'); }
+}
+function restartAll(){
+  s={screen:'start',module:0,card:0,flipped:false,
+     quizQ:0,quizAnswered:false,quizSelected:-1,
+     moduleScores:[],finalQ:0,finalAnswered:false,
+     finalSelected:-1,finalScores:[],isFinal:false};
+  accent(COLORS[1]);
+  render();
+}
+
+// ─────────────────────────────────────────
+//  RENDER
+// ─────────────────────────────────────────
+function render(){
+  const map={
+    start:scStart, moduleIntro:scModuleIntro, flashcards:scFlashcards,
+    quizIntro:scQuizIntro, quiz:scQuiz, moduleDone:scModuleDone,
+    finalIntro:scFinalIntro, finalQuiz:scFinalQuiz, results:scResults
+  };
+  document.getElementById('app').innerHTML=map[s.screen]();
+}
+render();
+</script>
+</body>
+</html>

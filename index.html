@@ -3,11 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CyberSec Adaptive Quiz</title>
+  <title>Retrieval — A Cybersecurity Learning Game</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root{
-      --bg:#0f1314; --green:#2dde2d; --red:#ff3355; --yellow:#f5c518; --cyan:#00d4e8; --dim:#426042; --fg:var(--green);
+      --ink:#0c0b09; --ink-deep:#07060a; --paper:#efe7d6; --paper-dim:#c9c2b3; --paper-mute:#8a8576;
+      --rule:#2a2823; --accent:#c5ff3d; --accent-dim:#7d9e2c; --warn:#ff8f3d;
+      --bg:#0c0b09; --green:#c5ff3d; --red:#ff8f3d; --yellow:#f5c518; --cyan:#00d4e8; --dim:#c9c2b3; --fg:var(--paper);
     }
     /* Light theme overrides when body has .light */
     body.light{ --bg:#e9eceb; --green:#267a2a; --red:#b3243a; --yellow:#8f720f; --cyan:#0a8ea0; --dim:#6b7b6b; --fg:#07090a; }
@@ -15,12 +17,29 @@
     body.light .crt:after{ mix-blend-mode:normal; opacity:0.12; }
     html,body{height:100%;}
     body{
-      background:var(--bg);
-      color:var(--fg);
+      background: var(--ink);
+      background-image:
+        radial-gradient(circle at 20% 0%, rgba(197,255,61,0.04) 0%, transparent 40%),
+        radial-gradient(circle at 80% 100%, rgba(197,255,61,0.025) 0%, transparent 50%);
+      color: var(--paper);
       font-family: "Courier New", Courier, monospace;
+      font-weight: 300;
+      font-size: 17px;
+      line-height: 1.55;
+      letter-spacing: 0.005em;
+      overflow-x: hidden;
       -webkit-font-smoothing:antialiased;
       -moz-osx-font-smoothing:grayscale;
     }
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none; z-index:100;
+      opacity:0.035;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+      mix-blend-mode: overlay;
+    }
+    ::selection{ background: var(--accent); color: var(--ink); }
     /* Neon glow */
     .neon{ text-shadow:0 0 6px rgba(45,222,45,0.25),0 0 12px rgba(45,222,45,0.07); }
     /* CRT scanlines overlay */
@@ -40,9 +59,180 @@
     .difficulty{ letter-spacing:.06em; }
     .diamond{ font-size:1.05rem; margin-right:2px; }
     .cursor{ display:inline-block; width:.7ch; background:var(--green); margin-left:6px; animation:blink 1s steps(2,start) infinite; }
-    @keyframes blink{ 50%{ opacity:0 } }
+    @keyframes blink{ 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
     .progress-outer{ background:rgba(255,255,255,0.03); height:12px; border-radius:8px; }
     .progress-inner{ height:12px; background:linear-gradient(90deg,var(--green),#87ff87); border-radius:8px; }
+
+    .meta-bar {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 28px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--paper-mute);
+      z-index: 50;
+      backdrop-filter: blur(8px);
+      background: rgba(12, 11, 9, 0.55);
+      border-bottom: 1px solid var(--rule);
+    }
+    .meta-bar .left { display: flex; gap: 22px; align-items: center; }
+    .meta-bar .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+    .meta-bar .right { display: none; gap: 22px; }
+    @media (min-width: 720px) { .meta-bar .right { display: flex; } }
+
+    .wrap { max-width: 1240px; margin: 0 auto; padding: 0 28px; }
+
+    .hero { min-height: 100vh; padding-top: 110px; padding-bottom: 60px; position: relative; display: flex; flex-direction: column; justify-content: space-between; }
+
+    .hero-tag {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .hero-tag::before { content: ""; width: 38px; height: 1px; background: var(--accent); }
+
+    .hero-title { font-family: "Courier New", Courier, monospace; font-weight: 300; font-size: clamp(56px, 11vw, 168px); line-height: 0.92; letter-spacing: -0.035em; color: var(--paper); }
+    .hero-title .it { font-style: italic; font-weight: 400; color: var(--accent); }
+    .hero-title .stroke { -webkit-text-stroke: 1px var(--paper); color: transparent; font-style: italic; font-weight: 300; }
+
+    .hero-bottom { display: grid; grid-template-columns: 1fr; gap: 40px; margin-top: 80px; padding-top: 32px; border-top: 1px solid var(--rule); }
+    @media (min-width: 860px) { .hero-bottom { grid-template-columns: 1.4fr 1fr; gap: 80px; } }
+
+    .hero-lede { font-family: "Courier New", Courier, monospace; font-size: clamp(18px, 1.6vw, 22px); font-weight: 300; line-height: 1.5; color: var(--paper-dim); max-width: 56ch; }
+    .hero-lede em { font-style: italic; color: var(--paper); }
+
+    .hero-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 20px; align-content: start; }
+    .hero-meta .cell .k { font-family: "Courier New", Courier, monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--paper-mute); margin-bottom: 6px; display: block; }
+    .hero-meta .cell .v { font-family: "Courier New", Courier, monospace; font-style: italic; font-weight: 400; font-size: 18px; color: var(--paper); }
+
+    .section { padding: 120px 0 80px; border-top: 1px solid var(--rule); position: relative; }
+
+    .sec-head { display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 70px; }
+    @media (min-width: 860px) { .sec-head { grid-template-columns: 200px 1fr; gap: 60px; } }
+
+    .sec-num { font-family: "Courier New", Courier, monospace; font-size: 12px; letter-spacing: 0.18em; color: var(--accent); padding-top: 14px; }
+    .sec-num span { display: block; color: var(--paper-mute); margin-top: 4px; }
+
+    .sec-title { font-family: "Courier New", Courier, monospace; font-weight: 300; font-size: clamp(40px, 5.5vw, 76px); line-height: 0.98; letter-spacing: -0.025em; color: var(--paper); max-width: 18ch; }
+    .sec-title em { font-style: italic; font-weight: 400; color: var(--accent); }
+
+    .editorial { max-width: 70ch; font-size: clamp(18px, 1.55vw, 21px); line-height: 1.62; color: var(--paper-dim); margin-bottom: 80px; padding-left: 0; }
+    @media (min-width: 860px) { .editorial { padding-left: 260px; } }
+    .editorial::first-letter { font-family: "Courier New", Courier, monospace; font-style: italic; font-weight: 400; font-size: 4em; line-height: 0.85; float: left; margin: 0.05em 0.1em 0 -0.05em; color: var(--accent); }
+
+    .grid { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+    @media (min-width: 720px) { .grid { grid-template-columns: 1fr 1fr; } }
+    @media (min-width: 1080px) { .grid.three { grid-template-columns: 1fr 1fr 1fr; } }
+
+    .card { background: var(--ink); padding: 38px 32px 42px; position: relative; transition: background 0.4s ease; }
+    .card:hover { background: #131210; }
+
+    .card-num { font-family: "Courier New", Courier, monospace; font-size: 10px; letter-spacing: 0.16em; color: var(--accent); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+    .card-num::before { content: ""; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+
+    .card-title { font-family: "Courier New", Courier, monospace; font-weight: 400; font-size: 26px; line-height: 1.1; letter-spacing: -0.015em; margin-bottom: 18px; color: var(--paper); }
+    .card-title em { font-style: italic; color: var(--accent); }
+
+    .card-body { font-size: 15.5px; line-height: 1.62; color: var(--paper-dim); }
+
+    .pipeline { margin: 0 0 80px; padding: 36px 28px; border: 1px solid var(--rule); background: linear-gradient(180deg, rgba(197,255,61,0.025), transparent); overflow-x: auto; }
+    .pipeline-label { font-family: "Courier New", Courier, monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper-mute); margin-bottom: 22px; }
+    .pipeline-track { display: flex; align-items: center; gap: 14px; min-width: 600px; }
+    .stage { flex: 1; padding: 18px 16px; border: 1px solid var(--rule); text-align: center; position: relative; }
+    .stage .s-num { font-family: "Courier New", Courier, monospace; font-size: 10px; color: var(--paper-mute); letter-spacing: 0.15em; margin-bottom: 6px; }
+    .stage .s-name { font-family: "Courier New", Courier, monospace; font-style: italic; font-size: 19px; color: var(--paper); }
+    .stage.active { border-color: var(--accent); background: rgba(197,255,61,0.06); }
+    .stage.active .s-name { color: var(--accent); }
+    .arrow { color: var(--paper-mute); font-family: "Courier New", Courier, monospace; font-size: 14px; }
+
+    .with-side { display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 80px; }
+    @media (min-width: 860px) { .with-side { grid-template-columns: 200px 1fr; gap: 60px; } }
+    .side-label { font-family: "Courier New", Courier, monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper-mute); padding-top: 8px; border-top: 1px solid var(--rule); }
+    .side-label .num { color: var(--accent); display: block; margin-bottom: 4px; }
+    .side-body { max-width: 64ch; font-size: 17px; line-height: 1.65; color: var(--paper-dim); }
+    .side-body p + p { margin-top: 18px; }
+
+    .findings { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin-bottom: 80px; }
+    @media (min-width: 1024px) { .findings { grid-template-columns: 1fr 1fr 1fr; } }
+    .finding { background: var(--ink); padding: 36px 30px 40px; }
+    .finding-tag { font-family: "Courier New", Courier, monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper-mute); margin-bottom: 10px; }
+    .finding h3 { font-family: "Courier New", Courier, monospace; font-weight: 400; font-size: 30px; line-height: 1; letter-spacing: -0.02em; margin-bottom: 28px; color: var(--paper); }
+    .finding.pos h3 em { font-style: italic; color: var(--accent); }
+    .finding.neg h3 em { font-style: italic; color: var(--warn); }
+    .finding.next h3 em { font-style: italic; color: var(--paper-dim); }
+    .finding ul { list-style: none; padding: 0; }
+    .finding li { padding: 14px 0 14px 28px; border-top: 1px solid var(--rule); font-size: 15.5px; line-height: 1.5; color: var(--paper-dim); position: relative; }
+    .finding li:last-child { border-bottom: 1px solid var(--rule); }
+    .finding li::before { position: absolute; left: 0; top: 14px; font-family: "Courier New", Courier, monospace; font-size: 11px; letter-spacing: 0.1em; color: var(--paper-mute); }
+    .finding.pos li:nth-child(1)::before { content: "+ 01"; color: var(--accent); }
+    .finding.pos li:nth-child(2)::before { content: "+ 02"; color: var(--accent); }
+    .finding.pos li:nth-child(3)::before { content: "+ 03"; color: var(--accent); }
+    .finding.pos li:nth-child(4)::before { content: "+ 04"; color: var(--accent); }
+    .finding.pos li:nth-child(5)::before { content: "+ 05"; color: var(--accent); }
+    .finding.neg li:nth-child(1)::before { content: "× 01"; color: var(--warn); }
+    .finding.neg li:nth-child(2)::before { content: "× 02"; color: var(--warn); }
+    .finding.neg li:nth-child(3)::before { content: "× 03"; color: var(--warn); }
+    .finding.neg li:nth-child(4)::before { content: "× 04"; color: var(--warn); }
+    .finding.neg li:nth-child(5)::before { content: "× 05"; color: var(--warn); }
+    .finding.next li:nth-child(1)::before { content: "→ 01"; }
+    .finding.next li:nth-child(2)::before { content: "→ 02"; }
+    .finding.next li:nth-child(3)::before { content: "→ 03"; }
+    .finding.next li:nth-child(4)::before { content: "→ 04"; }
+    .finding.next li:nth-child(5)::before { content: "→ 05"; }
+    .finding.next li:nth-child(6)::before { content: "→ 06"; }
+
+    .pull { margin: 60px 0 80px; padding: 60px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); text-align: center; }
+    .pull blockquote { font-family: "Courier New", Courier, monospace; font-style: italic; font-weight: 300; font-size: clamp(28px, 4vw, 52px); line-height: 1.15; letter-spacing: -0.02em; color: var(--paper); max-width: 22ch; margin: 0 auto; }
+    .pull blockquote span { color: var(--accent); }
+    .pull cite { display: block; margin-top: 28px; font-family: "Courier New", Courier, monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper-mute); font-style: normal; }
+
+    footer { border-top: 1px solid var(--rule); padding: 60px 0 40px; margin-top: 60px; }
+    .foot-grid { display: grid; grid-template-columns: 1fr; gap: 40px; margin-bottom: 80px; }
+    @media (min-width: 720px) { .foot-grid { grid-template-columns: 2fr 1fr 1fr; gap: 60px; } }
+    .foot-grid h4 { font-family: "Courier New", Courier, monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--paper-mute); margin-bottom: 18px; }
+    .foot-mark { font-family: "Courier New", Courier, monospace; font-style: italic; font-weight: 300; font-size: clamp(48px, 7vw, 88px); line-height: 0.95; letter-spacing: -0.025em; color: var(--paper); }
+    .foot-mark em { color: var(--accent); font-style: italic; }
+    .foot-list { list-style: none; padding: 0; }
+    .foot-list li { font-size: 15px; color: var(--paper-dim); padding: 6px 0; }
+    .foot-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 24px; border-top: 1px solid var(--rule); font-family: "Courier New", Courier, monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper-mute); }
+
+    .play { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 100px 0 110px; margin-top: 80px; text-align: center; position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 100%, rgba(197,255,61,0.10) 0%, transparent 60%); }
+    .play::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(var(--rule) 1px, transparent 1px), linear-gradient(90deg, var(--rule) 1px, transparent 1px); background-size: 60px 60px; opacity: 0.18; mask-image: radial-gradient(ellipse at center, black 10%, transparent 70%); -webkit-mask-image: radial-gradient(ellipse at center, black 10%, transparent 70%); pointer-events: none; }
+    .play-prompt { font-family: "Courier New", Courier, monospace; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 24px; display: inline-flex; align-items: center; gap: 10px; }
+    .play-prompt .cursor { display: inline-block; width: 8px; height: 14px; background: var(--accent); animation:blink 1s steps(2) infinite; }
+    .play-headline { font-family: "Courier New", Courier, monospace; font-style: italic; font-weight: 400; font-size: clamp(36px, 6vw, 76px); line-height: 1; letter-spacing: -0.02em; color: var(--paper); margin-bottom: 50px; }
+    .play-headline em { font-style: italic; color: var(--accent); }
+    .play-btn { display: inline-flex; align-items: center; gap: 18px; padding: 22px 38px; border: 1px solid var(--accent); background: transparent; color: var(--accent); font-family: "Courier New", Courier, monospace; font-weight: 700; font-size: 18px; letter-spacing: 0.22em; text-transform: uppercase; text-decoration: none; cursor: pointer; position: relative; transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease; }
+    .play-btn::before { content: "["; opacity: 0.6; }
+    .play-btn::after  { content: "]"; opacity: 0.6; }
+    .play-btn .arrow { display: inline-block; transition: transform 0.25s ease; }
+    .play-btn:hover { background: var(--accent); color: var(--ink); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(197,255,61,0.25); }
+    .play-btn:hover::before,
+    .play-btn:hover::after { opacity: 1; }
+    .play-btn:hover .arrow { transform: translateX(6px); }
+    .play-btn:active { transform: translateY(0); }
+    .play-foot { margin-top: 42px; font-family: "Courier New", Courier, monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper-mute); }
+
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.9s ease, transform 0.9s cubic-bezier(.2,.7,.2,1); }
+    .reveal.in { opacity: 1; transform: none; }
+
     /* buttons */
     .btn-correct{ background:rgba(45,222,45,0.06); border-color:rgba(45,222,45,0.18); }
     .btn-wrong{ background:rgba(255,51,85,0.04); border-color:rgba(255,51,85,0.18); }
@@ -59,10 +249,254 @@
     @media(max-width:640px){ .container{ padding:1rem } }
   </style>
 </head>
-<body class="crt min-h-screen flex items-center justify-center p-8">
-  <div id="app" class="container max-w-3xl w-full">
+<body>
+<div id="landing">
+  <div class="meta-bar">
+    <div class="left">
+      <span class="dot"></span>
+      <span>Project Dossier · v0.1</span>
+    </div>
+    <div class="right">
+      <span>§01 Design Rationale</span>
+      <span>§02 Try-Out</span>
+      <span>2026</span>
+    </div>
+  </div>
+
+      <section class="hero wrap">
+        <div>
+          <div class="hero-tag">An Educational Game · Cybersecurity Domain</div>
+          <h1 class="hero-title">
+            Re<span class="it">trie</span>val<br>
+            &amp; <span class="stroke">Reten</span>tion.
+          </h1>
+        </div>
+
+        <div class="hero-bottom">
+          <p class="hero-lede">
+            A quiz-driven cybersecurity learning game built around <em>repeated retrieval practice</em> and spaced review. Players progress through stages — New, Learning, Review, Mastered — while the system schedules each item according to how well they remember it. Learning is not measured at the end; it is measured continuously, by what the learner can still recall.
+          </p>
+          <div class="hero-meta">
+            <div class="cell"><span class="k">Domain</span><span class="v">Cybersecurity</span></div>
+            <div class="cell"><span class="k">Method</span><span class="v">Spaced retrieval</span></div>
+            <div class="cell"><span class="k">Format</span><span class="v">Single-player quiz</span></div>
+            <div class="cell"><span class="k">Stage</span><span class="v">Prototype, tested</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section wrap" id="s1">
+        <header class="sec-head">
+          <div class="sec-num">§ 01<span>Of Two Sections</span></div>
+          <h2 class="sec-title">Educational design <em>&amp;</em> learning rationale.</h2>
+        </header>
+
+        <p class="editorial reveal">
+          The game is designed to improve learners' accurate recall and long-term retention of cybersecurity concepts through repeated retrieval practice and spaced review cycles. Rather than treating learning as one-time memorization, the system supports gradual mastery through repeated encounters with content across time. Players answer questions, review explanations, and revisit concepts until stable performance is demonstrated. Learning success is reflected through consistent correct responses, fewer retries, and stronger retention across later sessions.
+        </p>
+
+        <div class="pipeline reveal">
+          <div class="pipeline-label">Mastery Progression — items move forward and back based on performance</div>
+          <div class="pipeline-track">
+            <div class="stage"><div class="s-num">01</div><div class="s-name">New</div></div>
+            <div class="arrow">───→</div>
+            <div class="stage"><div class="s-num">02</div><div class="s-name">Learning</div></div>
+            <div class="arrow">───→</div>
+            <div class="stage"><div class="s-num">03</div><div class="s-name">Review</div></div>
+            <div class="arrow">───→</div>
+            <div class="stage active"><div class="s-num">04</div><div class="s-name">Mastered</div></div>
+          </div>
+        </div>
+
+        <div class="grid three reveal">
+
+          <article class="card">
+            <div class="card-num">A · Self-Regulated Learning</div>
+            <h3 class="card-title">Learners <em>watching</em> themselves learn.</h3>
+            <p class="card-body">
+              Progress indicators move players from New → Learning → Review → Mastered. Confidence ratings — <em>Easy, Good, Hard</em> — let players self-assess perceived difficulty. Performance summaries highlight weak areas, encouraging goal-setting, reflection, and independent improvement.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-num">B · Adaptivity &amp; Personalization</div>
+            <h3 class="card-title">A path that <em>bends</em> toward weakness.</h3>
+            <p class="card-body">
+              Incorrect or unstable answers send items back to earlier stages and reschedule them more frequently. Items answered consistently correctly drift into longer review intervals. Each learner spends more time on the difficult and less time on the mastered.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-num">C · Game-Based Design</div>
+            <h3 class="card-title">Play and study, <em>indistinguishable</em>.</h3>
+            <p class="card-body">
+              Quiz-based interaction is the core mechanic — learning is inseparable from play. Immediate feedback after each question supports active learning. Visible progression and dashboards turn growth into reinforcement, aligning with established game-based learning principles.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-num">D · Collaboration &amp; Competition</div>
+            <h3 class="card-title">A door <em>left open</em> for others.</h3>
+            <p class="card-body">
+              The current prototype focuses on individual learning. Future versions could introduce collaborative team challenges, peer discussion rounds, or leaderboards — competition for motivation, collaboration for explanation and shared strategy.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-num">E · Assessment &amp; Feedback</div>
+            <h3 class="card-title">Evaluation <em>woven</em> into play.</h3>
+            <p class="card-body">
+              Assessment is embedded, not bolted on. The game records correctness, retries, exposure, confidence, and mastery progression. Learners are evaluated across levels — <em>Emerging, Developing, Mastered</em> — through continuous formative assessment that supports learning while measuring it.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-num">F · Multimedia Reinforcement</div>
+            <h3 class="card-title">Dashboards as <em>quiet</em> reward.</h3>
+            <p class="card-body">
+              Performance dashboards give visual reinforcement of growth without leaning on extrinsic rewards. Combined with challenge, repetition, and visible mastery progression, the loop holds attention through evidence of learning, not through points alone.
+            </p>
+          </article>
+
+        </div>
+
+        <div class="pull reveal">
+          <blockquote>
+            Learning is not measured at the end —<br>
+            it is measured <span>continuously</span>,<br>
+            by what the learner can still recall.
+          </blockquote>
+          <cite>— Design Thesis, §01</cite>
+        </div>
+      </section>
+
+      <section class="section wrap" id="s2">
+        <header class="sec-head">
+          <div class="sec-num">§ 02<span>Of Two Sections</span></div>
+          <h2 class="sec-title">Try-out, <em>iteration</em>, and what came back.</h2>
+        </header>
+
+        <div class="with-side reveal">
+          <div class="side-label"><span class="num">2.1</span>Try-Out Context</div>
+          <div class="side-body">
+            <p>The game prototype was informally tested with a small group of student users in an academic setting. Participants interacted with the game individually to practice cybersecurity knowledge and experience the retrieval-based learning system.</p>
+            <p>The purpose of the try-out was to observe usability, engagement, clarity of feedback, and whether the mastery progression system actually supported learning — not merely the appearance of it.</p>
+          </div>
+        </div>
+
+        <div class="with-side reveal">
+          <div class="side-label"><span class="num">2.2</span>Evidence of Implementation</div>
+          <div class="side-body">
+            <p>During the try-out, users completed quiz sessions, responded to repeated review items, and viewed performance dashboards. Observations showed that learners were engaged by the progression model and appreciated seeing their improvement over time.</p>
+            <p>Users reported that immediate explanations after incorrect answers helped reinforce understanding. Several players responded positively to the mastery stages because they could see their progress clearly, in motion.</p>
+          </div>
+        </div>
+
+        <div class="findings reveal">
+
+          <div class="finding pos">
+            <div class="finding-tag">2.3 · Strengths Identified</div>
+            <h3>What <em>worked</em>.</h3>
+            <ul>
+              <li>Immediate corrective feedback improved understanding after mistakes.</li>
+              <li>Progression stages increased motivation and persistence.</li>
+              <li>Repeated retrieval encouraged memory strengthening.</li>
+              <li>Performance dashboards helped learners monitor growth.</li>
+              <li>The system felt purposeful — learning and gameplay were integrated.</li>
+            </ul>
+          </div>
+
+          <div class="finding neg">
+            <div class="finding-tag">2.4 · Limitations Observed</div>
+            <h3>What <em>broke</em>.</h3>
+            <ul>
+              <li>The current prototype uses a fixed question bank, which may reduce replay variety.</li>
+              <li>Limited difficulty variation may not suit all learner levels.</li>
+              <li>New users needed clearer onboarding instructions.</li>
+              <li>The individual format lacked social interaction features such as collaboration or competition.</li>
+              <li>Learners unfamiliar with quiz systems may require more guidance.</li>
+            </ul>
+          </div>
+
+          <div class="finding next">
+            <div class="finding-tag">2.5 · Planned Improvements</div>
+            <h3>What <em>follows</em>.</h3>
+            <ul>
+              <li>Larger and more varied question pools.</li>
+              <li>Adaptive difficulty levels based on performance.</li>
+              <li>Improved onboarding tutorials.</li>
+              <li>Accessibility enhancements for broader learners.</li>
+              <li>Leaderboards or team-based challenges.</li>
+              <li>Richer analytics dashboards for long-term progress tracking.</li>
+            </ul>
+          </div>
+
+        </div>
+
+        <p class="editorial reveal" style="margin-bottom: 0;">
+          The try-out demonstrated that the game has strong educational potential, while also revealing clear opportunities for refinement through iterative design. The prototype, in short, is not a finished thing — it is a proposition, supported by evidence and shaped by what learners actually did with it.
+        </p>
+      </section>
+
+      <section class="play reveal">
+        <div class="wrap">
+          <div class="play-prompt">
+            <span>&gt; Ready to begin</span>
+            <span class="cursor"></span>
+          </div>
+          <h2 class="play-headline">Test what you <em>remember</em>.</h2>
+          <a id="launch-app" href="#boot" class="play-btn">
+            <span>Let&#39;s Play</span>
+            <span class="arrow">→</span>
+          </a>
+          <div class="play-foot">No account needed · Session starts at New stage</div>
+        </div>
+      </section>
+
+      <footer class="wrap">
+        <div class="foot-grid">
+          <div>
+            <h4>End of Dossier</h4>
+            <div class="foot-mark">Recall, <em>then</em><br>recall again.</div>
+          </div>
+          <div>
+            <h4>Sections</h4>
+            <ul class="foot-list">
+              <li>§01 — Educational Design</li>
+              <li>§02 — Try-Out &amp; Iteration</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Pillars</h4>
+            <ul class="foot-list">
+              <li>Spaced Retrieval</li>
+              <li>Self-Regulated Learning</li>
+              <li>Adaptivity</li>
+              <li>Embedded Assessment</li>
+            </ul>
+          </div>
+        </div>
+        <div class="foot-bottom">
+          <span>Cybersecurity Learning Game · Prototype</span>
+          <span>v0.1 — 2026</span>
+        </div>
+      </footer>
+
+      <script>
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              e.target.classList.add('in');
+              io.unobserve(e.target);
+            }
+          });
+        }, { threshold: 0.12 });
+        document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+      </script>
+</div>
+
     <!-- Boot Screen -->
-    <section id="boot" class="boot-screen glass p-8 rounded-lg">
+    <section id="boot" class="boot-screen glass p-8 rounded-lg hidden">
       <div class="neon text-lg">PhosphorOS v1.0</div>
       <div id="boot-lines" class="mt-4 text-sm muted" style="min-height:120px;">
       </div>
@@ -256,7 +690,7 @@ function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 // Sections
 function showSection(name){
-  ['boot','dashboard','quiz','complete'].forEach(s=>$(s).classList.add('hidden'));
+  ['landing','boot','dashboard','quiz','complete'].forEach(s=>$(s).classList.add('hidden'));
   $(name).classList.remove('hidden');
 }
 
@@ -441,8 +875,7 @@ function init(){
     if(savedTheme === 'light') document.body.classList.add('light'); else document.body.classList.remove('light');
     updateThemeToggleLabel();
   }catch(e){/*ignore*/}
-  // Boot sequence then show dashboard
-  setTimeout(()=>bootSequence(),300);
+  showSection('landing');
 }
 
 function updateThemeToggleLabel(){
@@ -459,6 +892,16 @@ document.addEventListener('click', (e)=>{
     updateThemeToggleLabel();
   }
 });
+
+// Landing CTA handler
+const launchBtn = $('launch-app');
+if(launchBtn){
+  launchBtn.onclick = (e)=>{
+    e.preventDefault();
+    showSection('boot');
+    bootSequence();
+  };
+}
 
 // Start
 init();
